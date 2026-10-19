@@ -1,0 +1,290 @@
+import React, { useState, useMemo } from 'react'
+import Sidebar from './components/Sidebar'
+import TopNav from './components/TopNav'
+import OverviewCards from './components/OverviewCards'
+import ForestMapContainer from './components/forest3d/ForestMapContainer'
+import ThreatAlertsPanel from './components/ThreatAlertsPanel'
+import IncidentHistoryTable from './components/IncidentHistoryTable'
+import SensorManagementView from './components/SensorManagementView'
+import MarkerDetailModal from './components/MarkerDetailModal'
+
+import {
+  INITIAL_SENSORS,
+  INITIAL_EVENTS,
+  SIMULATED_ZONES,
+  ANIMAL_TRAILS
+} from './data/mockData'
+import {
+  calculateDashboardStats,
+  generateRandomDemoIncident
+} from './services/dataService'
+
+import './App.css'
+
+export default function App() {
+  // Centralized Application State
+  const [sensors, setSensors] = useState(INITIAL_SENSORS)
+  const [events, setEvents] = useState(INITIAL_EVENTS)
+  const [activeNav, setActiveNav] = useState('overview') // 'overview', 'map', 'threats', 'history', 'sensors'
+  const [selectedZone, setSelectedZone] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedItem, setSelectedItem] = useState(null) // Modal / inspector item
+
+  // Calculate dynamic statistics strictly from current state (no hardcoding)
+  const stats = useMemo(() => {
+    return calculateDashboardStats(sensors, events)
+  }, [sensors, events])
+
+  // Acknowledge Action: Updates event status from 'active' to 'acknowledged'
+  const handleAcknowledge = (eventId) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, status: 'acknowledged' } : e))
+    )
+  }
+
+  // Resolve Action: Updates event status to 'resolved'
+  const handleResolve = (eventId) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, status: 'resolved' } : e))
+    )
+  }
+
+  // Sensor Disconnect / Reconnect Simulation Control
+  const handleToggleSensor = (sensorId) => {
+    const target = sensors.find((s) => s.id === sensorId)
+    if (!target) return
+
+    const willBeOnline = target.status === 'offline'
+
+    // Update sensor registry
+    setSensors((prev) =>
+      prev.map((s) => {
+        if (s.id !== sensorId) return s
+        return {
+          ...s,
+          status: willBeOnline ? 'online' : 'offline',
+          battery: willBeOnline ? 92 : 12,
+          signalStrength: willBeOnline ? '94%' : '0%',
+          solarCharging: willBeOnline,
+          lastPing: willBeOnline ? 'Just now (Reconnected)' : 'Telemetry Timeout (Offline)'
+        }
+      })
+    )
+
+    // Synchronize system events
+    if (!willBeOnline) {
+      // Disconnecting: log isolated hardware telemetry failure (separate from poaching threats)
+      const newFailure = {
+        id: `EVT-FAIL-${Date.now().toString().slice(-4)}`,
+        type: 'sensor_failure',
+        category: 'system',
+        title: `Sensor Telemetry Loss: ${sensorId}`,
+        description: `Heartbeat watchdog triggered for ${sensorId} (${target.name}). Telemetry transmission interrupted.`,
+        sensorId: sensorId,
+        sensorType: target.type,
+        zoneId: target.zoneId,
+        zoneName: target.zoneName,
+        coordinates: target.coordinates,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        timeAgo: 'Just now',
+        confidence: null,
+        priority: 'medium',
+        status: 'active',
+        isSimulated: true,
+        disclaimer: 'Simulated hardware event: packet transmission timeout. Sensor failure does not signify a poaching incident.'
+      }
+      setEvents((prev) => [newFailure, ...prev])
+    } else {
+      // Reconnecting: resolve open failure events for this sensor
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.sensorId === sensorId && e.type === 'sensor_failure' && e.status !== 'resolved'
+            ? { ...e, status: 'resolved', timeAgo: 'Resolved just now' }
+            : e
+        )
+      )
+    }
+  }
+
+  // Demonstration trigger: Simulate a new incident on demand
+  const handleSimulateIncident = () => {
+    const newInc = generateRandomDemoIncident(sensors)
+    setEvents((prev) => [newInc, ...prev])
+  }
+
+  // Marker click from the 3D Forest Map
+  const handleSelectMarker = (marker) => {
+    setSelectedItem(marker)
+  }
+
+  // Inspect event from tables or alert list
+  const handleInspectEvent = (evt) => {
+    setSelectedItem({ itemType: 'event', data: evt })
+  }
+
+  // Inspect sensor specs from sensor view
+  const handleInspectSensor = (sensor) => {
+    setSelectedItem({ itemType: 'sensor', data: sensor })
+  }
+
+  // "View in 3D" action from Threat Alerts: focus the map on the alert's zone and open its details
+  const handleViewOnMap = (alertItem) => {
+    if (activeNav !== 'overview' && activeNav !== 'map') {
+      setActiveNav('overview')
+    }
+    setSelectedZone(alertItem.zoneId)
+    setSelectedItem({ itemType: 'event', data: alertItem })
+  }
+
+  return (
+    <div className="dashboard-container">
+      {/* 1. SIDEBAR NAVIGATION */}
+      <Sidebar
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        stats={stats}
+      />
+
+      <div className="main-wrapper">
+        {/* 2. TOP NAVIGATION BAR */}
+        <TopNav
+          selectedZone={selectedZone}
+          setSelectedZone={setSelectedZone}
+          zones={SIMULATED_ZONES}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSimulateIncident={handleSimulateIncident}
+          stats={stats}
+          onOpenNotifications={() => setActiveNav('threats')}
+        />
+
+        {/* MAIN BODY VIEWS */}
+        <main className="content-body">
+          {/* TAB: OVERVIEW (Default Dashboard - 3D Forest Map is the primary visual centerpiece) */}
+          {activeNav === 'overview' && (
+            <>
+              {/* Compact Overview Cards */}
+              <OverviewCards
+                stats={stats}
+                onSelectCardTab={(tab) => setActiveNav(tab)}
+              />
+
+              {/* Middle Row: 3D Forest Reserve & Threat Alerts Panel */}
+              <div className="middle-dashboard-row">
+                <ForestMapContainer
+                  zones={SIMULATED_ZONES}
+                  trails={ANIMAL_TRAILS}
+                  sensors={sensors}
+                  events={events}
+                  selectedZone={selectedZone}
+                  setSelectedZone={setSelectedZone}
+                  onSelectMarker={handleSelectMarker}
+                />
+
+                <ThreatAlertsPanel
+                  events={events}
+                  zones={SIMULATED_ZONES}
+                  onAcknowledge={handleAcknowledge}
+                  onResolve={handleResolve}
+                  onInspectEvent={handleInspectEvent}
+                  onViewOnMap={handleViewOnMap}
+                />
+              </div>
+
+              {/* Lower Section: Incident History Table */}
+              <IncidentHistoryTable
+                events={events}
+                zones={SIMULATED_ZONES}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onAcknowledge={handleAcknowledge}
+                onResolve={handleResolve}
+                onInspectEvent={handleInspectEvent}
+              />
+            </>
+          )}
+
+          {/* TAB: SIMULATED FOREST MAP (Expanded 3D View) */}
+          {activeNav === 'map' && (
+            <>
+              <ForestMapContainer
+                zones={SIMULATED_ZONES}
+                trails={ANIMAL_TRAILS}
+                sensors={sensors}
+                events={events}
+                selectedZone={selectedZone}
+                setSelectedZone={setSelectedZone}
+                onSelectMarker={handleSelectMarker}
+              />
+
+              <ThreatAlertsPanel
+                events={events}
+                zones={SIMULATED_ZONES}
+                onAcknowledge={handleAcknowledge}
+                onResolve={handleResolve}
+                onInspectEvent={handleInspectEvent}
+                onViewOnMap={handleViewOnMap}
+              />
+            </>
+          )}
+
+          {/* TAB: THREAT ALERTS */}
+          {activeNav === 'threats' && (
+            <>
+              <OverviewCards
+                stats={stats}
+                onSelectCardTab={(tab) => setActiveNav(tab)}
+              />
+              <ThreatAlertsPanel
+                events={events}
+                zones={SIMULATED_ZONES}
+                onAcknowledge={handleAcknowledge}
+                onResolve={handleResolve}
+                onInspectEvent={handleInspectEvent}
+                onViewOnMap={handleViewOnMap}
+              />
+            </>
+          )}
+
+          {/* TAB: INCIDENT HISTORY */}
+          {activeNav === 'history' && (
+            <IncidentHistoryTable
+              events={events}
+              zones={SIMULATED_ZONES}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onAcknowledge={handleAcknowledge}
+              onResolve={handleResolve}
+              onInspectEvent={handleInspectEvent}
+            />
+          )}
+
+          {/* TAB: SENSOR MANAGEMENT */}
+          {activeNav === 'sensors' && (
+            <>
+              <OverviewCards
+                stats={stats}
+                onSelectCardTab={(tab) => setActiveNav(tab)}
+              />
+              <SensorManagementView
+                sensors={sensors}
+                zones={SIMULATED_ZONES}
+                onToggleSensor={handleToggleSensor}
+                onInspectSensor={handleInspectSensor}
+              />
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* CLICKED MARKER & SENSOR SPEC DETAIL MODAL */}
+      <MarkerDetailModal
+        selectedItem={selectedItem}
+        onClose={() => setSelectedItem(null)}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
+        onToggleSensor={handleToggleSensor}
+      />
+    </div>
+  )
+}
