@@ -9,9 +9,9 @@ import {
 import { INITIAL_SENSORS, INITIAL_EVENTS } from '../../data/mockData'
 
 const TREE_ASSETS = {
-  broadleaf: '/assets/trees/polyhaven/jacaranda_tree.gltf',
+  broadleaf: '/assets/trees/polyhaven/island_tree_01.gltf',
   conifer: '/assets/trees/polyhaven/island_tree_01.gltf',
-  riparian: '/assets/trees/polyhaven/jacaranda_tree.gltf',
+  riparian: '/assets/trees/polyhaven/island_tree_01.gltf',
   willow: '/assets/trees/polyhaven/island_tree_01.gltf',
   shrub: '/assets/trees/polyhaven/island_tree_01.gltf'
 }
