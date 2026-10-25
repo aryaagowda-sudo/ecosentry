@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 import * as THREE from 'three'
+import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import {
   WORLD_SIZE,
@@ -196,9 +197,17 @@ export default function Terrain({ selectedZone }) {
         // Triangle 2
         riverPositions.push(pL0.x, pL0.y, pL0.z, pR1.x, pR1.y, pR1.z, pL1.x, pL1.y, pL1.z)
 
+        const v0 = prevT * 6
+        const v1 = t * 6
+
+        // UV mapping for smooth downstream flow: u across width (0-1), v along length
+        // Triangle 1: pL0(0, v0), pR0(1, v0), pR1(1, v1)
+        riverUVs.push(0, v0, 1, v0, 1, v1)
+        // Triangle 2: pL0(0, v0), pR1(1, v1), pL1(0, v1)
+        riverUVs.push(0, v0, 1, v1, 0, v1)
+
         for (let k = 0; k < 6; k++) {
           riverNormals.push(0, 1, 0)
-          riverUVs.push(0.5, t)
         }
       }
     }
@@ -215,6 +224,60 @@ export default function Terrain({ selectedZone }) {
       riverGeometry: rivGeo
     }
   }, [])
+
+  // Procedural flowing water texture with caustics and wave crests
+  const waterTexture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')
+
+    // Base river color fill
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 512)
+    bgGrad.addColorStop(0, '#1c738c')
+    bgGrad.addColorStop(0.5, '#258aa5')
+    bgGrad.addColorStop(1, '#1b6e86')
+    ctx.fillStyle = bgGrad
+    ctx.fillRect(0, 0, 512, 512)
+
+    // Flowing caustics / water ripple streaks
+    for (let row = 0; row < 512; row += 24) {
+      // Primary wave line
+      ctx.strokeStyle = 'rgba(235, 252, 255, 0.42)'
+      ctx.lineWidth = 3.5
+      ctx.beginPath()
+      ctx.moveTo(0, row)
+      for (let x = 0; x <= 512; x += 16) {
+        const yOffset = Math.sin((x / 512) * Math.PI * 6 + row) * 5.5 + Math.cos((x / 512) * Math.PI * 10) * 2.5
+        ctx.lineTo(x, row + yOffset)
+      }
+      ctx.stroke()
+
+      // Subtle thin highlight ripple
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)'
+      ctx.lineWidth = 1.6
+      ctx.beginPath()
+      ctx.moveTo(0, row + 8)
+      for (let x = 0; x <= 512; x += 20) {
+        const yOffset = Math.sin((x / 512) * Math.PI * 8 + row * 0.7) * 4.0
+        ctx.lineTo(x, row + 8 + yOffset)
+      }
+      ctx.stroke()
+    }
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(1, 3)
+    return texture
+  }, [])
+
+  // Animate water flowing downstream from North to South continuously
+  useFrame((_, delta) => {
+    if (waterTexture) {
+      waterTexture.offset.y -= delta * 0.38
+    }
+  })
 
   // Zone selection state
   const isZone1 = selectedZone === 'zone-1'
@@ -249,14 +312,15 @@ export default function Terrain({ selectedZone }) {
         <meshBasicMaterial color="#181c19" />
       </mesh>
 
-      {/* 4. Realistic Winding Blue River */}
+      {/* 4. Realistic Winding Blue River with Visibly Flowing Water */}
       <mesh geometry={riverGeometry}>
         <meshStandardMaterial
-          color="#1e7892"
-          roughness={0.12}
-          metalness={0.35}
+          map={waterTexture}
+          color="#2ba5c4"
+          roughness={0.16}
+          metalness={0.3}
           transparent
-          opacity={0.88}
+          opacity={0.92}
         />
       </mesh>
 

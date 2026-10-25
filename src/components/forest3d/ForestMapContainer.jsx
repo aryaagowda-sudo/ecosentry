@@ -52,7 +52,7 @@ export default function ForestMapContainer({
         <div className="map-toolbar-left">
           <div className="map-card-title">
             <Compass size={15} style={{ color: 'var(--accent-green)' }} />
-            <span>Reserve surveillance · 3D</span>
+            <span>{viewMode === '3d' ? 'Reserve surveillance · 3D' : 'Reserve surveillance · 2D Tactical'}</span>
           </div>
           <span className="sim-spec-pill">
             {selectedZone === 'all'
@@ -296,7 +296,7 @@ export default function ForestMapContainer({
           </div>
         </div>
       ) : (
-        /* Preserved 2D Tactical View Fallback */
+        /* Replaced 2D Tactical View with Clean GIS Representation & Flowing River */
         <SimulatedForestMap
           zones={zones}
           trails={trails}
@@ -304,7 +304,10 @@ export default function ForestMapContainer({
           events={events}
           selectedZone={selectedZone}
           setSelectedZone={setSelectedZone}
+          selectedItem={selectedItem}
           onSelectMarker={onSelectMarker}
+          activeLayer={activeLayer}
+          onSwitchTo3D={() => setViewMode('3d')}
         />
       )}
 

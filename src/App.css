@@ -2427,79 +2427,382 @@
 }
 
 /* ==========================================================================
-   11. 2D TACTICAL MAP FALLBACK
+   11. 2D TACTICAL MAP (Clean GIS Top-Down with Flowing River)
    ========================================================================== */
 .tactical-map-viewport {
   position: relative;
-  height: 460px;
-  background-color: #F0F4F0;
+  height: 520px;
+  background-color: #14281c;
   overflow: hidden;
   border-bottom: 1px solid var(--border-standard);
+  user-select: none;
+  width: 100%;
 }
 
-.map-grid-overlay {
+.dedicated-map-mode .tactical-map-viewport {
+  height: calc(100vh - 200px);
+  min-height: 560px;
+}
+
+.tactical-grid-overlay {
   position: absolute;
   inset: 0;
-  background-image: 
-    linear-gradient(to right, rgba(36, 94, 69, 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(36, 94, 69, 0.08) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 25px 25px;
   pointer-events: none;
+  z-index: 2;
 }
 
-.topo-svg-layer {
+.tactical-svg-layer {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  display: block;
 }
 
-.sensor-pin {
+/* 2D RIVER DOWNSTREAM FLOW ANIMATION */
+.river-flow-line-main {
+  stroke: rgba(220, 250, 255, 0.9);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-dasharray: 4 8;
+  animation: riverFlowDownstream 1.8s linear infinite;
+}
+
+.river-flow-line-accent {
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 0.6;
+  stroke-linecap: round;
+  stroke-dasharray: 2 10;
+  stroke-dashoffset: 2;
+  animation: riverFlowDownstream 1.3s linear infinite;
+}
+
+.river-flow-line-secondary {
+  stroke: rgba(180, 240, 255, 0.55);
+  stroke-width: 0.55;
+  stroke-linecap: round;
+  stroke-dasharray: 3 9;
+  stroke-dashoffset: 4;
+  animation: riverFlowDownstream 2.2s linear infinite;
+}
+
+@keyframes riverFlowDownstream {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+/* 2D TACTICAL MARKERS LAYER */
+.tactical-markers-layer {
   position: absolute;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
+  inset: 0;
+  pointer-events: none;
   z-index: 5;
 }
 
-.sensor-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-standard);
-  background-color: #FFFFFF;
-  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.12);
-  transition: transform 0.15s;
-}
-
-.sensor-pin:hover .sensor-dot {
-  transform: scale(1.2);
-}
-
-.incident-ping {
+.tactical-pin {
   position: absolute;
   transform: translate(-50%, -50%);
   cursor: pointer;
-  z-index: 6;
-}
-
-.incident-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  pointer-events: auto;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-standard);
-  background-color: #FFFFFF;
-  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.15);
-  transition: transform 0.15s;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.incident-ping:hover .incident-dot {
-  transform: scale(1.2);
+.tactical-pin:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  z-index: 80;
+}
+
+.tactical-pin.selected {
+  transform: translate(-50%, -50%) scale(1.22);
+  z-index: 90;
+}
+
+.pin-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: 1px solid;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+.pin-tag-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  line-height: 1;
+}
+
+/* Sensor Camera Pin */
+.pin-camera .pin-badge {
+  background: rgba(13, 43, 36, 0.94);
+  color: #2dd4bf;
+  border-color: rgba(45, 212, 191, 0.75);
+}
+
+/* Sensor Acoustic Online Pin */
+.pin-acoustic.online .pin-badge {
+  background: rgba(13, 43, 26, 0.94);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.75);
+}
+
+/* Sensor Acoustic Offline Pin (MIC-05) */
+.pin-acoustic.offline .pin-badge {
+  background: rgba(51, 32, 9, 0.96);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.85);
+}
+
+/* Threat Incident Pin (Critical) */
+.pin-threat.critical .pin-badge {
+  background: rgba(59, 17, 17, 0.96);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.85);
+}
+
+/* Threat Incident Pin (Warning) */
+.pin-threat.warning .pin-badge {
+  background: rgba(59, 34, 11, 0.96);
+  color: #fdba74;
+  border-color: rgba(245, 158, 11, 0.85);
+}
+
+.pin-threat.resolved .pin-badge {
+  background: rgba(31, 41, 55, 0.88);
+  color: #9ca3af;
+  border-color: #4b5563;
+  opacity: 0.65;
+}
+
+/* Wildlife Sighting Pin */
+.pin-wildlife .pin-badge {
+  background: rgba(37, 18, 56, 0.94);
+  color: #d8b4fe;
+  border-color: rgba(192, 132, 252, 0.75);
+}
+
+/* Selected Marker Focus Halo */
+.tactical-pin.selected .pin-badge {
+  box-shadow: 0 0 0 2px #38bdf8, 0 0 12px rgba(56, 189, 248, 0.8);
+}
+
+/* Marker Pulse Rings */
+.pin-pulse {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0;
+  pointer-events: none;
+  animation: tacticalPinPulse 2.4s ease-out infinite;
+}
+
+.threat-pulse {
+  border-color: #ef4444;
+  animation-duration: 1.4s;
+}
+
+.wildlife-pulse {
+  border-color: #a855f7;
+  animation-duration: 2.8s;
+}
+
+@keyframes tacticalPinPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* SLEEK FLOATING TOOLTIP (Hover & Select Only) */
+.tactical-floating-card {
+  position: absolute;
+  width: 250px;
+  background: rgba(18, 26, 21, 0.96);
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: #e2e8f0;
+  z-index: 1000;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  animation: cardFadeIn 0.15s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -95%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+.tactical-floating-card .card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.tactical-floating-card .card-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-teal);
+  letter-spacing: 0.4px;
+}
+
+.tactical-floating-card .status-chip {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+.tactical-floating-card .status-chip.online {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.tactical-floating-card .status-chip.offline {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.tactical-floating-card .status-chip.priority-critical {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.tactical-floating-card .status-chip.priority-high,
+.tactical-floating-card .status-chip.priority-medium {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.tactical-floating-card .status-chip.priority-low {
+  background: rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+}
+
+.tactical-floating-card .card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.tactical-floating-card .card-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tactical-floating-card .meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.tactical-floating-card .meta-lbl {
+  font-size: 9px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tactical-floating-card .meta-val {
+  font-size: 10px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.tactical-floating-card .card-hint {
+  font-size: 9.5px;
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
+}
+
+/* TACTICAL SCALE & DATUM PILL */
+.tactical-scale-pill {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15, 24, 18, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-xs);
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+.scale-bar-line {
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  background: #38bdf8;
+  position: relative;
+}
+
+.scale-bar-line::before,
+.scale-bar-line::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 6px;
+  background: #38bdf8;
+}
+
+.scale-bar-line::before {
+  left: 0;
+}
+
+.scale-bar-line::after {
+  right: 0;
 }
 
 /* ==========================================================================
