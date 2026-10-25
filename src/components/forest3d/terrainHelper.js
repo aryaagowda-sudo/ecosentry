@@ -247,11 +247,11 @@ export function getTerrainElevation(x, z) {
   // Applied after edge blend so the river channel cuts cleanly through the platform boundary
   const riverX = getRiverCenterlineX(z)
   const distFromRiver = Math.abs(x - riverX)
-  const riverValleyWidth = 9.5
+  const riverValleyWidth = 11.5
 
   if (distFromRiver < riverValleyWidth) {
     const valleyFactor = Math.cos((distFromRiver / riverValleyWidth) * (Math.PI / 2))
-    const carveDepth = valleyFactor * 3.6
+    const carveDepth = valleyFactor * 4.8
     elev = Math.max(1.1, elev - carveDepth)
   }
 

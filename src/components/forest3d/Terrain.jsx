@@ -42,7 +42,7 @@ export default function Terrain({ selectedZone }) {
         color.setRGB(0.18, 0.22, 0.17)
       } else if (distFromRiver < 7.5) {
         // Riparian zone: lush river meadow green
-        color.setRGB(0.20, 0.38, 0.22)
+        color.setRGB(0.24, 0.42, 0.25)
       } else if (y > 9.5) {
         // High mountain peaks / exposed ridges: rugged rocky stone with moss
         const rockMix = Math.min(1, (y - 9.5) / 3.5)
@@ -209,9 +209,9 @@ export default function Terrain({ selectedZone }) {
           const currX1 = centerX + normOffset1 * width
           const currGround0 = getTerrainElevation(currX0, z)
           const currGround1 = getTerrainElevation(currX1, z)
-          // Crown profile: +0.24 above center bed, +0.14 at riverbank edges
-          const currCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
-          const currCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          // Keep the water inside the carved channel while retaining a subtle reflective crown.
+          const currCrown0 = 0.08 - Math.abs(normOffset0) * 0.03
+          const currCrown1 = 0.08 - Math.abs(normOffset1) * 0.03
           const currY0 = currGround0 + currCrown0
           const currY1 = currGround1 + currCrown1
 
@@ -220,8 +220,8 @@ export default function Terrain({ selectedZone }) {
           const prevX1 = prevCenterX + normOffset1 * prevWidth
           const prevGround0 = getTerrainElevation(prevX0, prevZ)
           const prevGround1 = getTerrainElevation(prevX1, prevZ)
-          const prevCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
-          const prevCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          const prevCrown0 = 0.08 - Math.abs(normOffset0) * 0.03
+          const prevCrown1 = 0.08 - Math.abs(normOffset1) * 0.03
           const prevY0 = prevGround0 + prevCrown0
           const prevY1 = prevGround1 + prevCrown1
 

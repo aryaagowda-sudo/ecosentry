@@ -70,9 +70,8 @@ export default function Vegetation() {
       return false
     }
 
-    // Generate balanced, natural tree canopy: 650 trees across reserve
-    // Allows terrain topography, river, and surveillance network to be seen clearly
-    const targetCount = 650
+    // Keep a readable canopy so the terrain, river, zone labels, and sensor network stay visible.
+    const targetCount = 430
     let attempts = 0
 
     while ((pines.length + broadleafs.length + riverTrees.length + shrubs.length) < targetCount && attempts < 1800) {
@@ -232,7 +231,7 @@ export default function Vegetation() {
         castShadow
       >
         <meshStandardMaterial
-          color="#0f3d23" // Deep pine conifer green
+          color="#1c5134" // Deep pine conifer green
           roughness={0.72}
           metalness={0.04}
           flatShading
@@ -253,7 +252,7 @@ export default function Vegetation() {
         castShadow
       >
         <meshStandardMaterial
-          color="#1b5230" // Rich emerald rainforest canopy
+          color="#2b6842" // Rich emerald rainforest canopy
           roughness={0.76}
           metalness={0.06}
           flatShading
