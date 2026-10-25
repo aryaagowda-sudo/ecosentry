@@ -4,158 +4,158 @@ import {
   Radio,
   Activity,
   ShieldAlert,
+  CheckCircle2,
   AlertTriangle,
   WifiOff,
-  CheckCircle2,
   AlertCircle
 } from 'lucide-react'
 
 export default function OverviewCards({ stats, onSelectCardTab }) {
   const { camera, acoustic, wildlife, incidents, connectivity } = stats
-  const offlineCount = connectivity.offline
+  const offlineCount = connectivity?.offline || 0
 
   return (
-    <section className="overview-grid compact-5">
-      {/* 1. Cameras Online */}
+    <section className="kpi-grid-5">
+      {/* 1. Camera Network */}
       <div
-        className="overview-card compact"
+        className="kpi-card"
         onClick={() => onSelectCardTab && onSelectCardTab('sensors')}
-        title="View camera trap sensors"
+        title="View camera trap telemetry"
       >
-        <div className="card-top-row">
-          <div className="card-icon-box cyan compact">
-            <Camera size={18} />
-          </div>
-          <div className={`card-trend-badge ${camera.offline === 0 ? 'trend-emerald' : 'trend-amber'}`}>
-            {camera.offline === 0 ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-            <span>{camera.uptimePct}%</span>
+        <div className="kpi-header">
+          <span className="kpi-label">Camera Traps</span>
+          <div className="kpi-icon-wrapper">
+            <Camera size={15} />
           </div>
         </div>
 
-        <div className="card-middle-metric">
-          <span className="card-label">Cameras Online</span>
-          <span className="card-value">{camera.online} / {camera.total}</span>
+        <div className="kpi-metric-row">
+          <span className="kpi-value">{camera?.online} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/ {camera?.total}</span></span>
+          <span className={`kpi-badge ${camera?.offline === 0 ? 'success' : 'warning'}`}>
+            {camera?.offline === 0 ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+            {camera?.uptimePct}%
+          </span>
         </div>
 
-        <div className="card-footer-subtext">
-          <span>{camera.offline === 0 ? 'All cameras active' : `${camera.offline} unit offline`}</span>
+        <div className="kpi-footer">
+          <span>{camera?.offline === 0 ? 'All traps streaming' : `${camera?.offline} node offline`}</span>
           <span className="highlight">Optical + PIR</span>
         </div>
       </div>
 
-      {/* 2. Acoustic Sensors Online */}
+      {/* 2. Acoustic Array */}
       <div
-        className="overview-card compact"
+        className="kpi-card"
         onClick={() => onSelectCardTab && onSelectCardTab('sensors')}
-        title="View acoustic audio sensor nodes"
+        title="View acoustic audio sensors"
       >
-        <div className="card-top-row">
-          <div className="card-icon-box emerald compact">
-            <Radio size={18} />
-          </div>
-          <div className={`card-trend-badge ${acoustic.offline === 0 ? 'trend-emerald' : 'trend-amber'}`}>
-            {acoustic.offline === 0 ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-            <span>{acoustic.uptimePct}%</span>
+        <div className="kpi-header">
+          <span className="kpi-label">Acoustic Nodes</span>
+          <div className="kpi-icon-wrapper">
+            <Radio size={15} />
           </div>
         </div>
 
-        <div className="card-middle-metric">
-          <span className="card-label">Acoustics Online</span>
-          <span className="card-value">{acoustic.online} / {acoustic.total}</span>
+        <div className="kpi-metric-row">
+          <span className="kpi-value">{acoustic?.online} <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 400 }}>/ {acoustic?.total}</span></span>
+          <span className={`kpi-badge ${acoustic?.offline === 0 ? 'success' : 'warning'}`}>
+            {acoustic?.offline === 0 ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+            {acoustic?.uptimePct}%
+          </span>
         </div>
 
-        <div className="card-footer-subtext">
-          <span>{acoustic.offline === 0 ? 'Audio array online' : `${acoustic.offline} node offline`}</span>
+        <div className="kpi-footer">
+          <span>{acoustic?.offline === 0 ? 'Array synchronized' : `${acoustic?.offline} node offline`}</span>
           <span className="highlight">20Hz - 96kHz</span>
         </div>
       </div>
 
       {/* 3. Wildlife Detections */}
       <div
-        className="overview-card compact"
-        onClick={() => onSelectCardTab && onSelectCardTab('history')}
-        title="View wildlife detections in event history"
+        className="kpi-card"
+        onClick={() => onSelectCardTab && onSelectCardTab('wildlife')}
+        title="View wildlife detections and sightings"
       >
-        <div className="card-top-row">
-          <div className="card-icon-box purple compact">
-            <Activity size={18} />
-          </div>
-          <div className="card-trend-badge trend-purple">
-            <span>{wildlife.uniqueSpeciesCount} Species</span>
+        <div className="kpi-header">
+          <span className="kpi-label">Wildlife Logged</span>
+          <div className="kpi-icon-wrapper">
+            <Activity size={15} />
           </div>
         </div>
 
-        <div className="card-middle-metric">
-          <span className="card-label">Wildlife Detections</span>
-          <span className="card-value">{wildlife.totalDetections} Logged</span>
+        <div className="kpi-metric-row">
+          <span className="kpi-value">{wildlife?.totalDetections}</span>
+          <span className="kpi-badge purple">
+            {wildlife?.uniqueSpeciesCount} Species
+          </span>
         </div>
 
-        <div className="card-footer-subtext">
-          <span>{wildlife.speciesList.slice(0, 2).join(', ')}</span>
-          <span className="highlight">Safe</span>
+        <div className="kpi-footer">
+          <span>{wildlife?.speciesList?.slice(0, 2).join(', ')}</span>
+          <span className="highlight">Non-threat</span>
         </div>
       </div>
 
       {/* 4. Active Incidents */}
       <div
-        className="overview-card compact"
+        className="kpi-card"
         onClick={() => onSelectCardTab && onSelectCardTab('threats')}
-        title="View threat alert panel"
+        title="View active threat alerts"
       >
-        <div className="card-top-row">
-          <div className="card-icon-box amber compact">
-            <ShieldAlert size={18} />
-          </div>
-          <div className={`card-trend-badge ${incidents.active > 0 ? 'trend-critical' : 'trend-emerald'}`}>
-            {incidents.active > 0 ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-            <span>{incidents.active} Active</span>
+        <div className="kpi-header">
+          <span className="kpi-label">Active Incidents</span>
+          <div className="kpi-icon-wrapper">
+            <ShieldAlert size={15} />
           </div>
         </div>
 
-        <div className="card-middle-metric">
-          <span className="card-label">Active Incidents</span>
+        <div className="kpi-metric-row">
           <span
-            className="card-value"
-            style={{ color: incidents.active > 0 ? '#ef4444' : '#fff' }}
+            className="kpi-value"
+            style={{ color: incidents?.active > 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}
           >
-            {incidents.active} Alerts
+            {incidents?.active}
+          </span>
+          <span className={`kpi-badge ${incidents?.active > 0 ? 'critical' : 'success'}`}>
+            {incidents?.active > 0 ? <AlertTriangle size={10} /> : <CheckCircle2 size={10} />}
+            {incidents?.active > 0 ? `${incidents?.criticalCount} Critical` : 'Nominal'}
           </span>
         </div>
 
-        <div className="card-footer-subtext">
-          <span>{incidents.criticalCount} Critical • {incidents.acknowledged} Under Inspection</span>
-          <span className="highlight">{incidents.resolved} Resolved</span>
+        <div className="kpi-footer">
+          <span>{incidents?.acknowledged} Acknowledged</span>
+          <span className="highlight">{incidents?.resolved} Resolved</span>
         </div>
       </div>
 
-      {/* 5. Offline Sensors */}
+      {/* 5. Sensor Grid Health */}
       <div
-        className="overview-card compact"
+        className="kpi-card"
         onClick={() => onSelectCardTab && onSelectCardTab('sensors')}
-        title="View sensor management and hardware telemetry"
+        title="View hardware telemetry and power"
       >
-        <div className="card-top-row">
-          <div className={`card-icon-box ${offlineCount === 0 ? 'emerald' : 'amber'} compact`}>
-            {offlineCount === 0 ? <CheckCircle2 size={18} /> : <WifiOff size={18} />}
-          </div>
-          <div className={`card-trend-badge ${offlineCount === 0 ? 'trend-emerald' : 'trend-amber'}`}>
-            <span>{connectivity.uptimePct}% Grid</span>
+        <div className="kpi-header">
+          <span className="kpi-label">Grid Availability</span>
+          <div className="kpi-icon-wrapper">
+            {offlineCount === 0 ? <CheckCircle2 size={15} /> : <WifiOff size={15} />}
           </div>
         </div>
 
-        <div className="card-middle-metric">
-          <span className="card-label">Offline Sensors</span>
+        <div className="kpi-metric-row">
           <span
-            className="card-value"
-            style={{ color: offlineCount > 0 ? '#f59e0b' : '#10b981' }}
+            className="kpi-value"
+            style={{ color: offlineCount > 0 ? 'var(--accent-amber)' : 'var(--accent-green)' }}
           >
-            {offlineCount} {offlineCount === 1 ? 'Unit' : 'Units'}
+            {connectivity?.uptimePct}%
+          </span>
+          <span className={`kpi-badge ${offlineCount === 0 ? 'success' : 'warning'}`}>
+            {offlineCount === 0 ? 'Optimal' : `${offlineCount} Disconnected`}
           </span>
         </div>
 
-        <div className="card-footer-subtext">
-          <span>{offlineCount === 0 ? 'All nodes reporting' : 'Telemetry loss'}</span>
-          <span className="highlight">Hardware</span>
+        <div className="kpi-footer">
+          <span>{connectivity?.online} / {connectivity?.total} Nodes Active</span>
+          <span className="highlight">Telemetry Watchdog</span>
         </div>
       </div>
     </section>

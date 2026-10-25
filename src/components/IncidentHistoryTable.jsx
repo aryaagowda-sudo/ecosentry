@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import {
-  Activity,
+  FileText,
   Download,
   Search,
-  Filter,
   CheckCircle,
   CheckCircle2,
   AlertTriangle,
@@ -11,8 +10,7 @@ import {
   Flame,
   User,
   Footprints,
-  Eye,
-  Sliders
+  Activity
 } from 'lucide-react'
 
 export default function IncidentHistoryTable({
@@ -42,11 +40,11 @@ export default function IncidentHistoryTable({
     // Search query match
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      const matchId = evt.id.toLowerCase().includes(q)
-      const matchTitle = evt.title.toLowerCase().includes(q)
-      const matchDesc = evt.description.toLowerCase().includes(q)
-      const matchSensor = evt.sensorId.toLowerCase().includes(q)
-      const matchZone = evt.zoneName.toLowerCase().includes(q)
+      const matchId = evt.id?.toLowerCase().includes(q)
+      const matchTitle = evt.title?.toLowerCase().includes(q)
+      const matchDesc = evt.description?.toLowerCase().includes(q)
+      const matchSensor = evt.sensorId?.toLowerCase().includes(q)
+      const matchZone = evt.zoneName?.toLowerCase().includes(q)
       if (!matchId && !matchTitle && !matchDesc && !matchSensor && !matchZone) return false
     }
 
@@ -55,7 +53,17 @@ export default function IncidentHistoryTable({
 
   // Export CSV handler
   const handleExportCSV = () => {
-    const headers = ['Event ID', 'Timestamp', 'Type', 'Category', 'Zone', 'Sensor ID', 'Confidence', 'Priority', 'Status']
+    const headers = [
+      'Event ID',
+      'Timestamp',
+      'Title',
+      'Category',
+      'Zone',
+      'Sensor ID',
+      'Confidence',
+      'Priority',
+      'Status'
+    ]
     const rows = filteredEvents.map((e) => [
       e.id,
       e.timestamp,
@@ -73,7 +81,7 @@ export default function IncidentHistoryTable({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `ecosentry_incident_history_${Date.now()}.csv`)
+    link.setAttribute('download', `ecosentry_incidents_${Date.now()}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -82,64 +90,67 @@ export default function IncidentHistoryTable({
   const getEventIcon = (type) => {
     switch (type) {
       case 'chainsaw_sound':
-        return <Volume2 size={14} color="#ef4444" />
+        return <Volume2 size={13} style={{ color: 'var(--accent-red)' }} />
       case 'gunshot_sound':
-        return <Flame size={14} color="#ef4444" />
+        return <Flame size={13} style={{ color: 'var(--accent-red)' }} />
       case 'human_detection':
-        return <User size={14} color="#f59e0b" />
+        return <User size={13} style={{ color: 'var(--accent-amber)' }} />
       case 'animal_boundary_crossing':
-        return <Footprints size={14} color="#a855f7" />
+        return <Footprints size={13} style={{ color: 'var(--accent-purple)' }} />
       case 'wildlife_sighting':
-        return <Activity size={14} color="#10b981" />
+        return <Activity size={13} style={{ color: 'var(--accent-green)' }} />
       default:
-        return <AlertTriangle size={14} color="#94a39b" />
+        return <AlertTriangle size={13} style={{ color: 'var(--text-muted)' }} />
     }
   }
 
   return (
-    <section className="recent-events-container">
-      {/* Table Top Controls Bar */}
-      <div className="events-table-header">
-        <div className="events-header-left">
-          <h2>
-            <Activity size={18} color="#10b981" />
-            <span>Recorded Incident & Event History</span>
-          </h2>
-          <span className="events-count-badge">
-            {filteredEvents.length} of {events.length} Events
+    <div className="data-panel-card">
+      {/* Top Toolbar */}
+      <div className="data-panel-toolbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h3 className="data-panel-title">
+            <FileText size={16} style={{ color: 'var(--accent-teal)' }} />
+            <span>Incident & Event Telemetry Log</span>
+          </h3>
+          <span className="kpi-badge neutral" style={{ fontFamily: 'var(--font-mono)' }}>
+            {filteredEvents.length} / {events.length} Records
           </span>
         </div>
 
-        <div className="events-table-controls">
+        <div className="table-controls-cluster">
           {/* Category Filter */}
           <select
-            className="filter-select compact"
+            className="control-select"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
+            title="Filter by event category"
           >
             <option value="all">All Categories</option>
-            <option value="threat">Threats Only</option>
-            <option value="wildlife">Wildlife Detections</option>
+            <option value="threat">Threat Classifications</option>
+            <option value="wildlife">Wildlife Sightings</option>
             <option value="system">Hardware Failures</option>
           </select>
 
           {/* Status Filter */}
           <select
-            className="filter-select compact"
+            className="control-select"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            title="Filter by status"
           >
             <option value="all">All Statuses</option>
-            <option value="active">Active</option>
+            <option value="active">Active Only</option>
             <option value="acknowledged">Acknowledged</option>
             <option value="resolved">Resolved</option>
           </select>
 
           {/* Zone Filter */}
           <select
-            className="filter-select compact"
+            className="control-select"
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
+            title="Filter by zone"
           >
             <option value="all">All Zones</option>
             {zones.map((z) => (
@@ -149,115 +160,136 @@ export default function IncidentHistoryTable({
             ))}
           </select>
 
-          {/* Search Box */}
-          <div className="table-search-wrapper">
-            <Search size={14} className="search-icon" />
+          {/* Inline Table Search */}
+          <div className="table-search-box">
+            <Search size={12} className="icon" />
             <input
               type="text"
-              placeholder="Search history..."
-              className="events-filter-input"
+              placeholder="Search table..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          {/* Export CSV */}
-          <button className="btn-table-action" onClick={handleExportCSV}>
-            <Download size={14} />
+          {/* Export to CSV */}
+          <button
+            className="btn-export-csv"
+            onClick={handleExportCSV}
+            title="Export filtered records to standard CSV"
+          >
+            <Download size={12} />
             <span>Export CSV</span>
           </button>
         </div>
       </div>
 
       {/* Responsive Table */}
-      <div className="table-responsive">
-        <table className="events-table">
+      <div className="table-wrapper-responsive">
+        <table className="standard-data-table">
           <thead>
             <tr>
-              <th>Event ID & Time</th>
-              <th>Classification & Type</th>
-              <th>Zone / Sector</th>
+              <th>Event ID</th>
+              <th>Timestamp</th>
+              <th>Classification & Title</th>
+              <th>Category</th>
+              <th>Sector Zone</th>
               <th>Sensor Node</th>
-              <th>Confidence</th>
+              <th>AI Confidence</th>
               <th>Priority</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredEvents.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#94a39b' }}>
-                  No incident records found matching your filters.
+                <td colSpan={10} style={{ textAlign: 'center', padding: '32px' }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                    No events match the selected filter criteria.
+                  </div>
                 </td>
               </tr>
             ) : (
               filteredEvents.map((evt) => (
                 <tr key={evt.id}>
                   <td>
-                    <span className="event-id-cell">{evt.id}</span>
-                    <span className="event-time-sub">{evt.timestamp}</span>
+                    <span className="code-id-cell">{evt.id}</span>
+                  </td>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                    {evt.timestamp}
                   </td>
                   <td>
-                    <div className="event-type-badge">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {getEventIcon(evt.type)}
-                      <span>{evt.title}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {evt.title}
+                      </span>
                     </div>
                   </td>
                   <td>
-                    <span style={{ fontSize: '12.5px', color: '#e2e8f0' }}>{evt.zoneName}</span>
+                    <span
+                      style={{
+                        textTransform: 'uppercase',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color:
+                          evt.category === 'threat'
+                            ? 'var(--accent-red)'
+                            : evt.category === 'wildlife'
+                            ? 'var(--accent-purple)'
+                            : 'var(--text-muted)'
+                      }}
+                    >
+                      {evt.category}
+                    </span>
                   </td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{evt.zoneName}</td>
                   <td>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#38bdf8' }}>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--accent-teal)',
+                        fontSize: '11px'
+                      }}
+                    >
                       {evt.sensorId}
                     </span>
                   </td>
-                  <td>
-                    {evt.confidence !== null ? (
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#10b981' }}>
-                        {Math.round(evt.confidence * 100)}%
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: '11px', color: '#94a39b' }}>Telemetry</span>
-                    )}
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>
+                    {evt.confidence !== null ? `${Math.round(evt.confidence * 100)}%` : '—'}
                   </td>
                   <td>
-                    <span className={`threat-severity-badge ${evt.priority}`}>
-                      {evt.priority}
-                    </span>
+                    <span className={`status-tag ${evt.priority}`}>{evt.priority}</span>
                   </td>
                   <td>
-                    <span className={`status-pill ${evt.status}`}>
-                      {evt.status === 'active' && <AlertTriangle size={12} />}
-                      {evt.status === 'acknowledged' && <CheckCircle size={12} />}
-                      {evt.status === 'resolved' && <CheckCircle2 size={12} />}
-                      {evt.status.toUpperCase()}
-                    </span>
+                    <span className={`status-tag ${evt.status}`}>{evt.status}</span>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', gap: '4px' }}>
                       {evt.status === 'active' && (
                         <button
-                          className="btn-status-action ack"
+                          className="btn-action-sm primary-ack"
                           onClick={() => onAcknowledge(evt.id)}
-                          title="Acknowledge alert"
+                          title="Acknowledge event"
                         >
-                          Acknowledge
+                          <CheckCircle size={10} />
+                          <span>Ack</span>
                         </button>
                       )}
                       {evt.status === 'acknowledged' && (
                         <button
-                          className="btn-status-action resolve"
+                          className="btn-action-sm primary-resolve"
                           onClick={() => onResolve(evt.id)}
-                          title="Mark resolved"
+                          title="Resolve event"
                         >
-                          Resolve
+                          <CheckCircle2 size={10} />
+                          <span>Resolve</span>
                         </button>
                       )}
                       <button
-                        className="btn-inspect"
+                        className="btn-action-sm"
                         onClick={() => onInspectEvent(evt)}
-                        title="View complete event metadata"
+                        title="Inspect full details"
                       >
                         Inspect
                       </button>
@@ -269,6 +301,6 @@ export default function IncidentHistoryTable({
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   )
 }

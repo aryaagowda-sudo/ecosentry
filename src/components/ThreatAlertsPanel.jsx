@@ -11,7 +11,8 @@ import {
   CheckCircle,
   CheckCircle2,
   Info,
-  Compass
+  Compass,
+  SlidersHorizontal
 } from 'lucide-react'
 
 export default function ThreatAlertsPanel({
@@ -30,7 +31,7 @@ export default function ThreatAlertsPanel({
 
   // Apply Multi-Criteria Filters
   const filteredAlerts = events.filter((evt) => {
-    // Exclude purely benign wildlife sightings from the threat panel
+    // Exclude benign wildlife sightings from the threat panel
     if (evt.category === 'wildlife') return false
 
     // Filter by Event Type
@@ -48,66 +49,72 @@ export default function ThreatAlertsPanel({
     return true
   })
 
-  // Render appropriate category icon
-  const getEventIcon = (type) => {
+  // Render category icon
+  const getEventIcon = (type, priority) => {
+    const iconColor =
+      priority === 'critical'
+        ? 'var(--accent-red)'
+        : priority === 'high'
+        ? 'var(--accent-amber)'
+        : priority === 'medium'
+        ? 'var(--accent-blue)'
+        : 'var(--accent-green)'
+
     switch (type) {
       case 'chainsaw_sound':
-        return <Volume2 size={16} color="#ef4444" />
+        return <Volume2 size={14} style={{ color: iconColor }} />
       case 'gunshot_sound':
-        return <Flame size={16} color="#ef4444" />
+        return <Flame size={14} style={{ color: iconColor }} />
       case 'human_detection':
-        return <User size={16} color="#f59e0b" />
+        return <User size={14} style={{ color: iconColor }} />
       case 'animal_boundary_crossing':
-        return <Footprints size={16} color="#a855f7" />
+        return <Footprints size={14} style={{ color: 'var(--accent-purple)' }} />
       case 'sensor_failure':
-        return <AlertTriangle size={16} color="#94a39b" />
+        return <AlertTriangle size={14} style={{ color: 'var(--text-muted)' }} />
       default:
-        return <ShieldAlert size={16} color="#ef4444" />
+        return <ShieldAlert size={14} style={{ color: iconColor }} />
     }
   }
 
   return (
-    <div className="threat-panel-container">
+    <div className="threat-panel-card">
       {/* Header */}
       <div className="threat-panel-header">
-        <div className="threat-header-title">
-          <ShieldAlert size={18} color="#ef4444" />
-          <h2>Threat & Anomaly Alerts</h2>
+        <div className="threat-title-group">
+          <ShieldAlert size={16} style={{ color: 'var(--accent-red)' }} />
+          <h3 className="threat-panel-title">Threat & Anomaly Stream</h3>
         </div>
-        <span className="threat-count-pill">{filteredAlerts.length} Matching</span>
-      </div>
-
-      {/* Demonstration & Scientific Disclaimer Banner */}
-      <div className="panel-disclaimer-banner">
-        <Info size={14} color="#f59e0b" style={{ flexShrink: 0 }} />
-        <span>
-          <strong>Simulated Event Notice:</strong> Classifications indicate acoustic/optical model pattern similarities. A sound classification does not prove poaching. Ground ranger verification is required.
+        <span
+          className="kpi-badge neutral"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        >
+          {filteredAlerts.length} Active Feeds
         </span>
       </div>
 
-      {/* Comprehensive Multi-Filter Bar */}
-      <div className="threat-filters-bar">
-        {/* Type Filter */}
+      {/* Filter Controls Bar */}
+      <div className="threat-filter-controls">
         <select
-          className="filter-select"
+          className="control-select"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
+          title="Filter by threat event classification"
         >
-          <option value="all">All Threat Types</option>
-          <option value="chainsaw_sound">Chainsaw-like Sounds</option>
-          <option value="gunshot_sound">Gunshot-like Sounds</option>
-          <option value="human_detection">Human Detections</option>
-          <option value="animal_boundary_crossing">Animal Boundary Crossings</option>
-          <option value="sensor_failure">Sensor Failures</option>
+          <option value="all">All Classifications</option>
+          <option value="chainsaw_sound">Chainsaw Audio</option>
+          <option value="gunshot_sound">Gunshot Audio</option>
+          <option value="human_detection">Human Detection</option>
+          <option value="animal_boundary_crossing">Boundary Breach</option>
+          <option value="sensor_failure">Sensor Telemetry Fail</option>
         </select>
 
-        {/* Zone Filter */}
         <select
-          className="filter-select"
+          className="control-select"
           value={zoneFilter}
           onChange={(e) => setZoneFilter(e.target.value)}
+          title="Filter by forest sector"
         >
-          <option value="all">All Zones</option>
+          <option value="all">All Sectors</option>
           {zones.map((z) => (
             <option key={z.id} value={z.id}>
               {z.name}
@@ -115,24 +122,24 @@ export default function ThreatAlertsPanel({
           ))}
         </select>
 
-        {/* Priority Filter */}
         <select
-          className="filter-select"
+          className="control-select"
           value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}
+          title="Filter by priority tier"
         >
-          <option value="all">All Priorities</option>
+          <option value="all">All Tiers</option>
           <option value="critical">Critical</option>
           <option value="high">High</option>
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
 
-        {/* Status Filter */}
         <select
-          className="filter-select"
+          className="control-select"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
+          title="Filter by investigation status"
         >
           <option value="all">All Statuses</option>
           <option value="active">Active Only</option>
@@ -141,110 +148,144 @@ export default function ThreatAlertsPanel({
         </select>
       </div>
 
-      {/* Alert List */}
-      <div className="threat-list-scroll">
+      {/* Alert Stream */}
+      <div className="threat-items-stream">
         {filteredAlerts.length === 0 ? (
-          <div className="empty-state-card">
-            <CheckCircle2 size={32} color="#10b981" />
-            <p>No threat alerts matching selected filters.</p>
+          <div
+            style={{
+              padding: '36px 16px',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <CheckCircle2 size={24} style={{ color: 'var(--accent-green)' }} />
+            <span style={{ fontSize: '12px', fontWeight: 600 }}>No threat events matching filter criteria</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>All sensor sectors operating nominally</span>
           </div>
         ) : (
           filteredAlerts.map((alert) => (
             <div
               key={alert.id}
-              className={`threat-card ${alert.priority} ${alert.status}`}
+              className={`alert-item-card ${alert.priority} ${alert.status}`}
             >
-              <div className="threat-card-top">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {getEventIcon(alert.type)}
-                  <span className={`threat-severity-badge ${alert.priority}`}>
+              <div className="alert-top-meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {getEventIcon(alert.type, alert.priority)}
+                  <span className="code-id-cell">{alert.id}</span>
+                  <span className={`status-tag ${alert.priority}`}>
                     {alert.priority}
                   </span>
-                  <span className={`status-pill ${alert.status}`}>
-                    {alert.status.toUpperCase()}
+                  <span className={`status-tag ${alert.status}`}>
+                    {alert.status}
                   </span>
                 </div>
-                <span className="threat-time">
-                  <Clock size={12} />
-                  {alert.timeAgo}
-                </span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '10.5px',
+                    color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-mono)'
+                  }}
+                >
+                  <Clock size={11} />
+                  <span>{alert.timeAgo}</span>
+                </div>
               </div>
 
-              <div className="threat-title">{alert.title}</div>
-              <div className="threat-description-text">{alert.description}</div>
+              <div className="alert-classification-title">{alert.title}</div>
+              <div className="alert-description-copy">{alert.description}</div>
 
-              {/* Source & Coordinates Row */}
-              <div className="threat-meta-row">
-                <div className="threat-location">
-                  <MapPin size={12} />
+              <div className="alert-details-row">
+                <div className="alert-location-tag">
+                  <MapPin size={11} style={{ color: 'var(--text-muted)' }} />
                   <span>
-                    {alert.zoneName} ({alert.sensorId})
+                    {alert.zoneName} • {alert.sensorId}
                   </span>
                 </div>
-                {alert.confidence !== null && (
-                  <span className="threat-confidence">
-                    {Math.round(alert.confidence * 100)}% Confidence
+                {alert.confidence !== null ? (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '10.5px',
+                      color: 'var(--text-secondary)'
+                    }}
+                  >
+                    {Math.round(alert.confidence * 100)}% Match
                   </span>
-                )}
-                {alert.confidence === null && (
-                  <span className="threat-confidence" style={{ color: '#94a39b' }}>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      color: 'var(--text-dim)',
+                      fontFamily: 'var(--font-mono)'
+                    }}
+                  >
                     Hardware Telemetry
                   </span>
                 )}
               </div>
 
-              {/* Source Sensor Spec */}
-              {alert.source && (
-                <div style={{ fontSize: '11px', color: '#64746b', fontFamily: 'var(--font-mono)' }}>
-                  Source: {alert.source}
-                </div>
-              )}
-
-              {/* Alert Actions: Acknowledge, Resolve, View in 3D Forest */}
-              <div className="threat-actions-row">
+              {/* Actions Toolbar */}
+              <div className="alert-actions-toolbar">
                 {alert.status === 'active' && (
                   <button
-                    className="threat-btn primary"
+                    className="btn-action-sm primary-ack"
                     onClick={() => onAcknowledge(alert.id)}
-                    title="Acknowledge alert and update state"
+                    title="Acknowledge alert and take ownership"
                   >
-                    <CheckCircle size={13} />
+                    <CheckCircle size={11} />
                     <span>Acknowledge</span>
                   </button>
                 )}
 
                 {alert.status === 'acknowledged' && (
                   <button
-                    className="threat-btn success"
+                    className="btn-action-sm primary-resolve"
                     onClick={() => onResolve(alert.id)}
                     title="Mark event investigated and resolved"
                   >
-                    <CheckCircle2 size={13} />
-                    <span>Mark Resolved</span>
+                    <CheckCircle2 size={11} />
+                    <span>Resolve</span>
                   </button>
                 )}
 
                 {alert.status === 'resolved' && (
-                  <span style={{ fontSize: '11px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircle2 size={12} /> Resolved
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--accent-green)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontWeight: 600
+                    }}
+                  >
+                    <CheckCircle2 size={11} /> Resolved
                   </span>
                 )}
 
-                {/* View Location in 3D Forest Map */}
+                {/* View Location in 3D */}
                 <button
-                  className="threat-btn secondary"
-                  onClick={() => onViewOnMap ? onViewOnMap(alert) : onInspectEvent(alert)}
-                  title="View this event location in the 3D Forest Reserve"
+                  className="btn-action-sm"
+                  onClick={() => (onViewOnMap ? onViewOnMap(alert) : onInspectEvent(alert))}
+                  title="Center and highlight in 3D Forest Reserve"
                 >
-                  <Compass size={12} color="#10b981" />
-                  <span>View in 3D</span>
+                  <Compass size={11} style={{ color: 'var(--accent-teal)' }} />
+                  <span>Locate in 3D</span>
                 </button>
 
                 <button
-                  className="threat-btn secondary"
+                  className="btn-action-sm"
                   onClick={() => onInspectEvent(alert)}
+                  title="View full event parameters"
                 >
-                  Details
+                  Inspect
                 </button>
               </div>
             </div>

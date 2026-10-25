@@ -1,64 +1,72 @@
+/* ==========================================================================
+   EcoSentry Enterprise Design System
+   Professional Wildlife Intelligence & Anti-Poaching Command Center
+   ========================================================================== */
+
 :root {
+  /* Typography */
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Color Palette - Forest Command Dark Theme */
-  --bg-app: #080d0b;
-  --bg-sidebar: #0b130f;
-  --bg-header: #0d1712;
-  --bg-card: #111e18;
-  --bg-card-hover: #15271f;
-  --bg-card-alt: #0e1914;
-  --bg-input: #09120e;
+  /* Professional Color System */
+  /* Backgrounds */
+  --bg-app: #0B1114;
+  --bg-sidebar: #0D1519;
+  --bg-header: #0D1519;
+  --bg-card: #111B20;
+  --bg-card-hover: #142127;
+  --bg-surface: #162229;
+  --bg-surface-hover: #1B2B34;
+  --bg-input: #0E161B;
+  --bg-overlay: rgba(11, 17, 20, 0.85);
 
   /* Borders & Dividers */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-light: rgba(16, 185, 129, 0.2);
-  --border-active: rgba(16, 185, 129, 0.5);
+  --border-standard: #26353D;
+  --border-subtle: #1D2A30;
+  --border-focus: #39B8B0;
+  --border-hover: #324550;
 
-  /* Primary Accent - Forest Emerald */
-  --primary: #10b981;
-  --primary-hover: #34d399;
-  --primary-glow: rgba(16, 185, 129, 0.25);
-  --primary-faint: rgba(16, 185, 129, 0.1);
+  /* Typography Colors */
+  --text-primary: #E8EEF1;
+  --text-secondary: #A0AFB8;
+  --text-muted: #71838D;
+  --text-dim: #4E606B;
 
-  /* Status Colors */
-  --status-critical: #ef4444;
-  --status-critical-bg: rgba(239, 68, 68, 0.12);
-  --status-critical-border: rgba(239, 68, 68, 0.35);
+  /* Operational Accent Palette */
+  --accent-green: #27C58A;
+  --accent-green-bg: rgba(39, 197, 138, 0.1);
+  --accent-green-border: rgba(39, 197, 138, 0.3);
 
-  --status-warning: #f59e0b;
-  --status-warning-bg: rgba(245, 158, 11, 0.12);
-  --status-warning-border: rgba(245, 158, 11, 0.35);
+  --accent-teal: #39B8B0;
+  --accent-teal-bg: rgba(57, 184, 176, 0.1);
+  --accent-teal-border: rgba(57, 184, 176, 0.3);
 
-  --status-normal: #10b981;
-  --status-normal-bg: rgba(16, 185, 129, 0.12);
-  --status-normal-border: rgba(16, 185, 129, 0.35);
+  --accent-amber: #E8AA3A;
+  --accent-amber-bg: rgba(232, 170, 58, 0.1);
+  --accent-amber-border: rgba(232, 170, 58, 0.3);
 
-  --status-info: #06b6d4;
-  --status-info-bg: rgba(6, 182, 212, 0.12);
-  --status-info-border: rgba(6, 182, 212, 0.35);
+  --accent-red: #EF5350;
+  --accent-red-bg: rgba(239, 83, 80, 0.12);
+  --accent-red-border: rgba(239, 83, 80, 0.35);
 
-  --status-purple: #a855f7;
-  --status-purple-bg: rgba(168, 85, 247, 0.12);
+  --accent-purple: #A879E8;
+  --accent-purple-bg: rgba(168, 121, 232, 0.1);
+  --accent-purple-border: rgba(168, 121, 232, 0.3);
 
-  /* Text Colors */
-  --text-main: #f1f5f3;
-  --text-muted: #94a39b;
-  --text-dim: #64746b;
-  --text-primary: #10b981;
+  --accent-blue: #58A6D9;
+  --accent-blue-bg: rgba(88, 166, 217, 0.1);
+  --accent-blue-border: rgba(88, 166, 217, 0.3);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.45);
-  --shadow-glow: 0 0 20px var(--primary-glow);
+  /* Corner Radii (4px to 8px max) */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  /* Shadows (Subtle, non-neon) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.65);
 }
 
 * {
@@ -67,10 +75,10 @@
   padding: 0;
 }
 
-body {
+html, body {
   font-family: var(--font-sans);
   background-color: var(--bg-app);
-  color: var(--text-main);
+  color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -81,16 +89,14 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -98,24 +104,25 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1c3328;
-  border-radius: 4px;
+  background: var(--border-standard);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a4e3c;
+  background: var(--border-hover);
 }
 
-/* Base button and interactive resets */
+/* Form & Interactive Resets */
 button {
   font-family: inherit;
   border: none;
   background: none;
   cursor: pointer;
   outline: none;
+  user-select: none;
 }
 
-input, select {
+input, select, textarea {
   font-family: inherit;
   outline: none;
 }

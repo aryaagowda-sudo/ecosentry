@@ -1,18 +1,17 @@
 import React, { useState } from 'react'
 import {
   Compass,
-  Layers,
   Camera,
   Radio,
   Activity,
   ShieldAlert,
   RotateCcw,
-  Eye,
   Info,
-  Maximize2,
   Box,
   Map as MapIcon,
-  Crosshair
+  Crosshair,
+  Layers,
+  X
 } from 'lucide-react'
 
 import ForestCanvas from './ForestCanvas'
@@ -43,74 +42,74 @@ export default function ForestMapContainer({
   }
 
   return (
-    <div className="forest-map-container upgraded-3d">
-      {/* Map Header with Controls */}
-      <div className="map-header">
-        <div className="map-title-group">
-          <h2>
-            <Compass size={18} color="#10b981" />
-            <span>3D Forest Reserve & Surveillance Grid</span>
-          </h2>
-          <span className="coords-tag">
+    <div className="surveillance-map-card">
+      {/* Map Header Toolbar with Controls */}
+      <div className="map-card-toolbar">
+        <div className="map-toolbar-left">
+          <div className="map-card-title">
+            <Compass size={16} style={{ color: 'var(--accent-green)' }} />
+            <span>3D Forest Surveillance Grid</span>
+          </div>
+          <span className="sim-spec-pill">
             {selectedZone === 'all'
-              ? 'All 4 Zones • Simulated Space: 100x100'
-              : zones.find((z) => z.id === selectedZone)?.name || 'Simulated Forest'}
+              ? 'All 4 Sectors • 100x100 Grid'
+              : zones.find((z) => z.id === selectedZone)?.name || 'Simulated Locus'}
           </span>
         </div>
 
-        {/* Top Controls: 3D/2D View Toggle & Layer Pills */}
-        <div className="map-header-actions">
+        {/* Top Controls: 3D/2D View Toggle & Layer Selector */}
+        <div className="map-toolbar-controls">
           {/* 3D vs 2D Mode Switcher */}
-          <div className="view-mode-toggle">
+          <div className="btn-group-toggle">
             <button
-              className={`mode-btn ${viewMode === '3d' ? 'active' : ''}`}
+              className={`btn-toggle-option ${viewMode === '3d' ? 'active' : ''}`}
               onClick={() => setViewMode('3d')}
               title="Interactive 3D Forest Environment with elevation and vegetation"
             >
-              <Box size={14} />
-              <span>3D Environment</span>
+              <Box size={12} />
+              <span>3D Model</span>
             </button>
             <button
-              className={`mode-btn ${viewMode === '2d' ? 'active' : ''}`}
+              className={`btn-toggle-option ${viewMode === '2d' ? 'active' : ''}`}
               onClick={() => setViewMode('2d')}
               title="2D Tactical GIS Grid Map"
             >
-              <MapIcon size={14} />
+              <MapIcon size={12} />
               <span>2D Tactical</span>
             </button>
           </div>
 
-          {/* Layer Filter Pills */}
-          <div className="map-layer-pills">
+          {/* Layer Filter Chips */}
+          <div className="map-layer-selector">
             <button
-              className={`layer-btn ${activeLayer === 'all' ? 'active' : ''}`}
+              className={`layer-chip ${activeLayer === 'all' ? 'active' : ''}`}
               onClick={() => setActiveLayer('all')}
             >
-              All Elements
+              All
             </button>
             <button
-              className={`layer-btn ${activeLayer === 'cameras' ? 'active' : ''}`}
+              className={`layer-chip ${activeLayer === 'cameras' ? 'active' : ''}`}
               onClick={() => setActiveLayer('cameras')}
             >
               Cameras ({sensors.filter((s) => s.type === 'camera').length})
             </button>
             <button
-              className={`layer-btn ${activeLayer === 'acoustics' ? 'active' : ''}`}
+              className={`layer-chip ${activeLayer === 'acoustics' ? 'active' : ''}`}
               onClick={() => setActiveLayer('acoustics')}
             >
-              Acoustics ({sensors.filter((s) => s.type === 'acoustic').length})
+              Acoustic ({sensors.filter((s) => s.type === 'acoustic').length})
             </button>
             <button
-              className={`layer-btn ${activeLayer === 'threats' ? 'active' : ''}`}
+              className={`layer-chip ${activeLayer === 'threats' ? 'active' : ''}`}
               onClick={() => setActiveLayer('threats')}
             >
               Threats ({events.filter((e) => e.category === 'threat').length})
             </button>
             <button
-              className={`layer-btn ${activeLayer === 'wildlife' ? 'active' : ''}`}
+              className={`layer-chip ${activeLayer === 'wildlife' ? 'active' : ''}`}
               onClick={() => setActiveLayer('wildlife')}
             >
-              Wildlife ({events.filter((e) => e.category === 'wildlife').length})
+              Fauna ({events.filter((e) => e.category === 'wildlife').length})
             </button>
           </div>
         </div>
@@ -118,33 +117,35 @@ export default function ForestMapContainer({
 
       {/* VIEWPORT: 3D Canvas or 2D Tactical View */}
       {viewMode === '3d' ? (
-        <div className="forest-3d-viewport-wrapper">
+        <div className="map-canvas-container">
           {/* Main 3D Three.js Forest Canvas */}
-          <ForestCanvas
-            zones={zones}
-            trails={trails}
-            sensors={sensors}
-            events={events}
-            selectedZone={selectedZone}
-            activeLayer={activeLayer}
-            isTopDown={isTopDown}
-            onSelectMarker={onSelectMarker}
-            onSwitchTo2D={() => setViewMode('2d')}
-          />
+          <div className="canvas-viewport-three">
+            <ForestCanvas
+              zones={zones}
+              trails={trails}
+              sensors={sensors}
+              events={events}
+              selectedZone={selectedZone}
+              activeLayer={activeLayer}
+              isTopDown={isTopDown}
+              onSelectMarker={onSelectMarker}
+              onSwitchTo2D={() => setViewMode('2d')}
+            />
+          </div>
 
-          {/* Floating Zone Focus Chips (top-left over 3D canvas) */}
-          <div className="zone-focus-chips">
-            <span className="chips-title">Focus Zone:</span>
+          {/* HUD Sector Selector (top-left over 3D canvas) */}
+          <div className="hud-zone-selector">
+            <span className="hud-zone-label">Sector:</span>
             <button
-              className={`zone-chip ${selectedZone === 'all' ? 'active' : ''}`}
+              className={`hud-zone-btn ${selectedZone === 'all' ? 'active' : ''}`}
               onClick={() => setSelectedZone('all')}
             >
-              Entire Reserve
+              All
             </button>
             {zones.map((z) => (
               <button
                 key={z.id}
-                className={`zone-chip ${selectedZone === z.id ? 'active' : ''}`}
+                className={`hud-zone-btn ${selectedZone === z.id ? 'active' : ''}`}
                 onClick={() => setSelectedZone(z.id)}
               >
                 {z.code}
@@ -152,63 +153,85 @@ export default function ForestMapContainer({
             ))}
           </div>
 
-          {/* Floating 3D Navigation Controls (top-right over 3D canvas) */}
-          <div className="floating-camera-controls">
+          {/* HUD 3D Camera Controls (top-right over 3D canvas) */}
+          <div className="hud-camera-actions">
             <button
-              className={`cam-ctrl-btn ${isTopDown ? 'active' : ''}`}
+              className={`hud-action-btn ${isTopDown ? 'active' : ''}`}
               onClick={() => setIsTopDown(!isTopDown)}
-              title={isTopDown ? 'Switch to Perspective 3D View' : 'Switch to Top-Down 2D Map View'}
+              title={isTopDown ? 'Switch to Angled 3D Perspective' : 'Switch to Orthographic Top-Down'}
             >
-              <Crosshair size={14} />
-              <span>{isTopDown ? '3D Angled' : 'Top-Down'}</span>
+              <Crosshair size={12} />
+              <span>{isTopDown ? 'Perspective' : 'Top-Down'}</span>
             </button>
 
             <button
-              className="cam-ctrl-btn"
+              className="hud-action-btn"
               onClick={handleResetCamera}
-              title="Reset 3D camera to default overview"
+              title="Reset 3D camera to default isometric view"
             >
-              <RotateCcw size={14} />
-              <span>Reset Camera</span>
+              <RotateCcw size={12} />
+              <span>Reset</span>
             </button>
           </div>
 
-          {/* Interactive 3D Legend (bottom-left) */}
+          {/* HUD Map Legend (bottom-left) */}
           {showLegend && (
-            <div className="map-hud-legend upgrade">
-              <div className="legend-header">
-                <span>3D Reserve Legend</span>
+            <div className="map-hud-legend">
+              <div className="legend-header-row">
+                <span>Symbology Legend</span>
                 <button
-                  className="btn-legend-close"
                   onClick={() => setShowLegend(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0 2px'
+                  }}
+                  title="Hide legend"
                 >
-                  ✕
+                  <X size={10} />
                 </button>
               </div>
-              <div className="legend-items-grid">
-                <div className="legend-item">
-                  <Camera size={13} color="#06b6d4" />
-                  <span>Camera Trap (Optical)</span>
+              <div className="legend-grid-items">
+                <div className="legend-entry">
+                  <Camera size={11} style={{ color: 'var(--accent-teal)' }} />
+                  <span>Optical Camera Trap</span>
                 </div>
-                <div className="legend-item">
-                  <Radio size={13} color="#10b981" />
-                  <span>Acoustic Sensor Node</span>
+                <div className="legend-entry">
+                  <Radio size={11} style={{ color: 'var(--accent-green)' }} />
+                  <span>Bioacoustic Audio Node</span>
                 </div>
-                <div className="legend-item">
-                  <ShieldAlert size={13} color="#ef4444" />
-                  <span>Threat / Anomaly Beacon</span>
+                <div className="legend-entry">
+                  <ShieldAlert size={11} style={{ color: 'var(--accent-red)' }} />
+                  <span>Threat / Incident Beacon</span>
                 </div>
-                <div className="legend-item">
-                  <Activity size={13} color="#a855f7" />
+                <div className="legend-entry">
+                  <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
                   <span>3D Wildlife Detection</span>
                 </div>
-                <div className="legend-item">
-                  <span className="legend-color-dot" style={{ background: '#64746b' }}></span>
+                <div className="legend-entry">
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--text-dim)',
+                      display: 'inline-block'
+                    }}
+                  />
                   <span>Sensor Offline (Gray)</span>
                 </div>
-                <div className="legend-item">
-                  <span className="legend-trail-line"></span>
-                  <span>Animal Migratory Trail</span>
+                <div className="legend-entry">
+                  <span
+                    style={{
+                      width: 14,
+                      height: 2,
+                      backgroundColor: 'rgba(232, 170, 58, 0.7)',
+                      display: 'inline-block'
+                    }}
+                  />
+                  <span>Animal Trail Waypoint</span>
                 </div>
               </div>
             </div>
@@ -216,17 +239,18 @@ export default function ForestMapContainer({
 
           {!showLegend && (
             <button
-              className="btn-show-legend"
+              className="hud-action-btn"
+              style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 10 }}
               onClick={() => setShowLegend(true)}
-              title="Open map legend"
             >
-              Show Legend
+              <Layers size={11} />
+              <span>Legend</span>
             </button>
           )}
 
           {/* Interaction Instruction Hint */}
-          <div className="interaction-hint-overlay">
-            <span>Left Click + Drag: Rotate • Right Click: Pan • Scroll: Zoom • Click pins for details</span>
+          <div className="hud-interaction-hint">
+            Drag to Rotate • Right-click to Pan • Scroll to Zoom • Click markers to inspect
           </div>
         </div>
       ) : (
@@ -243,10 +267,10 @@ export default function ForestMapContainer({
       )}
 
       {/* Simulated Coordinates Disclaimer Strip */}
-      <div className="simulated-coords-strip">
-        <Info size={13} color="#06b6d4" />
+      <div className="map-disclaimer-strip">
+        <Info size={12} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />
         <span>
-          <strong>Simulated Environmental Model:</strong> Terrain elevations, river paths, animal trails, and GPS coordinates are synthetic mathematical approximations designed for academic prototype testing and ranger training.
+          <strong>Academic Simulation Notice:</strong> Elevations, canopy vegetation, animal trails, and GPS telemetry are synthetic mathematical models engineered for college project demonstration and anti-poaching operations research.
         </span>
       </div>
     </div>

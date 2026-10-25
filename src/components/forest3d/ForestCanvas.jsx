@@ -130,8 +130,8 @@ export default function ForestCanvas({
           shadows
           gl={{ antialias: true, alpha: false }}
           onCreated={({ gl, scene }) => {
-            gl.setClearColor(new THREE.Color('#08110c'))
-            scene.fog = new THREE.FogExp2('#08110c', 0.0075)
+            gl.setClearColor(new THREE.Color('#0B1114'))
+            scene.fog = new THREE.FogExp2('#0B1114', 0.0075)
           }}
         >
           {/* Natural Atmospheric Lighting */}

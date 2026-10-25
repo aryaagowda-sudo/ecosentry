@@ -6,6 +6,9 @@ import ForestMapContainer from './components/forest3d/ForestMapContainer'
 import ThreatAlertsPanel from './components/ThreatAlertsPanel'
 import IncidentHistoryTable from './components/IncidentHistoryTable'
 import SensorManagementView from './components/SensorManagementView'
+import WildlifeDetectionsView from './components/WildlifeDetectionsView'
+import AnalyticsView from './components/AnalyticsView'
+import SettingsView from './components/SettingsView'
 import MarkerDetailModal from './components/MarkerDetailModal'
 
 import {
@@ -25,7 +28,7 @@ export default function App() {
   // Centralized Application State
   const [sensors, setSensors] = useState(INITIAL_SENSORS)
   const [events, setEvents] = useState(INITIAL_EVENTS)
-  const [activeNav, setActiveNav] = useState('overview') // 'overview', 'map', 'threats', 'history', 'sensors'
+  const [activeNav, setActiveNav] = useState('overview') // 'overview', 'map', 'threats', 'history', 'sensors', 'wildlife', 'analytics', 'settings'
   const [selectedZone, setSelectedZone] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedItem, setSelectedItem] = useState(null) // Modal / inspector item
@@ -132,13 +135,15 @@ export default function App() {
     if (activeNav !== 'overview' && activeNav !== 'map') {
       setActiveNav('overview')
     }
-    setSelectedZone(alertItem.zoneId)
+    if (alertItem.zoneId) {
+      setSelectedZone(alertItem.zoneId)
+    }
     setSelectedItem({ itemType: 'event', data: alertItem })
   }
 
   return (
     <div className="dashboard-container">
-      {/* 1. SIDEBAR NAVIGATION */}
+      {/* 1. ENTERPRISE SIDEBAR NAVIGATION */}
       <Sidebar
         activeNav={activeNav}
         setActiveNav={setActiveNav}
@@ -146,8 +151,9 @@ export default function App() {
       />
 
       <div className="main-wrapper">
-        {/* 2. TOP NAVIGATION BAR */}
+        {/* 2. MINIMAL TOP HEADER */}
         <TopNav
+          activeNav={activeNav}
           selectedZone={selectedZone}
           setSelectedZone={setSelectedZone}
           zones={SIMULATED_ZONES}
@@ -158,19 +164,19 @@ export default function App() {
           onOpenNotifications={() => setActiveNav('threats')}
         />
 
-        {/* MAIN BODY VIEWS */}
+        {/* 3. MAIN DASHBOARD CONTENT */}
         <main className="content-body">
-          {/* TAB: OVERVIEW (Default Dashboard - 3D Forest Map is the primary visual centerpiece) */}
+          {/* TAB: OVERVIEW (Default Security Command Center) */}
           {activeNav === 'overview' && (
             <>
-              {/* Compact Overview Cards */}
+              {/* Compact Overview KPI Cards */}
               <OverviewCards
                 stats={stats}
                 onSelectCardTab={(tab) => setActiveNav(tab)}
               />
 
               {/* Middle Row: 3D Forest Reserve & Threat Alerts Panel */}
-              <div className="middle-dashboard-row">
+              <div className="overview-middle-layout">
                 <ForestMapContainer
                   zones={SIMULATED_ZONES}
                   trails={ANIMAL_TRAILS}
@@ -204,9 +210,9 @@ export default function App() {
             </>
           )}
 
-          {/* TAB: SIMULATED FOREST MAP (Expanded 3D View) */}
+          {/* TAB: 3D FOREST MAP (Expanded View) */}
           {activeNav === 'map' && (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <ForestMapContainer
                 zones={SIMULATED_ZONES}
                 trails={ANIMAL_TRAILS}
@@ -225,12 +231,12 @@ export default function App() {
                 onInspectEvent={handleInspectEvent}
                 onViewOnMap={handleViewOnMap}
               />
-            </>
+            </div>
           )}
 
           {/* TAB: THREAT ALERTS */}
           {activeNav === 'threats' && (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <OverviewCards
                 stats={stats}
                 onSelectCardTab={(tab) => setActiveNav(tab)}
@@ -243,7 +249,7 @@ export default function App() {
                 onInspectEvent={handleInspectEvent}
                 onViewOnMap={handleViewOnMap}
               />
-            </>
+            </div>
           )}
 
           {/* TAB: INCIDENT HISTORY */}
@@ -261,7 +267,7 @@ export default function App() {
 
           {/* TAB: SENSOR MANAGEMENT */}
           {activeNav === 'sensors' && (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <OverviewCards
                 stats={stats}
                 onSelectCardTab={(tab) => setActiveNav(tab)}
@@ -272,7 +278,32 @@ export default function App() {
                 onToggleSensor={handleToggleSensor}
                 onInspectSensor={handleInspectSensor}
               />
-            </>
+            </div>
+          )}
+
+          {/* TAB: WILDLIFE DETECTIONS */}
+          {activeNav === 'wildlife' && (
+            <WildlifeDetectionsView
+              events={events}
+              zones={SIMULATED_ZONES}
+              onInspectEvent={handleInspectEvent}
+              onViewOnMap={handleViewOnMap}
+            />
+          )}
+
+          {/* TAB: OPERATIONS ANALYTICS */}
+          {activeNav === 'analytics' && (
+            <AnalyticsView
+              stats={stats}
+              events={events}
+              sensors={sensors}
+              zones={SIMULATED_ZONES}
+            />
+          )}
+
+          {/* TAB: SETTINGS & CALIBRATION */}
+          {activeNav === 'settings' && (
+            <SettingsView />
           )}
         </main>
       </div>
