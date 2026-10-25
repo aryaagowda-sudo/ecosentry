@@ -20,12 +20,12 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
   const activeHighlight = hovered || isSelected
 
   const color = isResolved
-    ? '#71838D'
+    ? '#829286'
     : isCritical
-    ? '#EF5350'
+    ? '#C94232'
     : isHigh
-    ? '#E8AA3A'
-    : '#58A6D9'
+    ? '#B77A20'
+    : '#2B6888'
 
   // Animate pulse ring
   useFrame((state, delta) => {

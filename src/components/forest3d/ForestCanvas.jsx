@@ -132,15 +132,15 @@ export default function ForestCanvas({
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           onCreated={({ gl, scene }) => {
-            gl.setClearColor(new THREE.Color('#0B1114'))
-            scene.fog = new THREE.FogExp2('#0B1114', 0.0075)
+            gl.setClearColor(new THREE.Color('#EBF0EA'))
+            scene.fog = new THREE.FogExp2('#EBF0EA', 0.005)
           }}
         >
-          {/* Natural Atmospheric Lighting */}
-          <ambientLight color="#1e3a2b" intensity={0.9} />
+          {/* Natural Atmospheric Daylight Lighting */}
+          <ambientLight color="#EBF3EC" intensity={0.95} />
           <directionalLight
-            position={[30, 48, 25]}
-            intensity={1.35}
+            position={[35, 52, 30]}
+            intensity={1.45}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
@@ -150,9 +150,9 @@ export default function ForestCanvas({
             shadow-camera-right={55}
             shadow-camera-top={55}
             shadow-camera-bottom={-55}
-            color="#fffbeb"
+            color="#FFFDF5"
           />
-          <hemisphereLight skyColor="#064e3b" groundColor="#06120b" intensity={0.5} />
+          <hemisphereLight skyColor="#E2EFE4" groundColor="#CADACA" intensity={0.65} />
 
           {/* Interactive Camera Controller */}
           <CameraController

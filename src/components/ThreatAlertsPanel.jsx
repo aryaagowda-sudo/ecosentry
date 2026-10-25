@@ -80,16 +80,27 @@ export default function ThreatAlertsPanel({
     <div className="threat-panel-card">
       {/* Header */}
       <div className="threat-panel-header">
-        <div className="threat-title-group">
-          <ShieldAlert size={16} style={{ color: 'var(--accent-red)' }} />
-          <h3 className="threat-panel-title">Threat & Anomaly Stream</h3>
+        <div>
+          <div className="threat-title-group">
+            <ShieldAlert size={16} style={{ color: 'var(--accent-red)' }} />
+            <h3 className="threat-panel-title">Incident response</h3>
+          </div>
+          <p className="threat-panel-subtitle">Prioritized for officer review</p>
         </div>
-        <span
-          className="kpi-badge neutral"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          {filteredAlerts.length} Active Feeds
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span
+            className="kpi-badge critical"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {filteredAlerts.filter(a => a.status === 'active').length} Active
+          </span>
+          <span
+            className="kpi-badge neutral"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {filteredAlerts.length} Total
+          </span>
+        </div>
       </div>
 
       {/* Filter Controls Bar */}
@@ -291,6 +302,11 @@ export default function ThreatAlertsPanel({
             </div>
           ))
         )}
+      </div>
+
+      <div className="threat-panel-footer-advisory">
+        <Info size={12} style={{ color: 'var(--accent-amber)', flexShrink: 0 }} />
+        <span>Ground-ranger verification required prior to tactical unit dispatch.</span>
       </div>
     </div>
   )

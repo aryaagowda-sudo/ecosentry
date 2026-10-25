@@ -20,20 +20,20 @@ export default function Terrain({ selectedZone }) {
       pos.setY(i, y)
 
       // Vertex color blending based on forest zone and elevation
-      // Using professional deep earth & satellite tones
+      // Realistic daylight satellite & topographic woodland tones
       const color = new THREE.Color()
       if (x <= 0 && z <= 0) {
-        // Zone 1: Lush North Canopy
-        color.setHSL(0.38, 0.40, 0.11 + Math.max(0, y * 0.018))
+        // Zone 1: Lush North Canopy (rich deep canopy green)
+        color.setHSL(0.35, 0.44, 0.28 + Math.max(0, y * 0.016))
       } else if (x > 0 && z <= 0) {
-        // Zone 2: East River Basin (cool wetland / delta)
-        color.setHSL(0.46, 0.35, 0.10 + Math.max(0, y * 0.018))
+        // Zone 2: East River Basin (fresh river delta & wetland green)
+        color.setHSL(0.38, 0.40, 0.31 + Math.max(0, y * 0.016))
       } else if (x <= 0 && z > 0) {
-        // Zone 3: South Wildlife Corridor (dense underbrush)
-        color.setHSL(0.34, 0.32, 0.12 + Math.max(0, y * 0.018))
+        // Zone 3: South Wildlife Corridor (dense emerald migration forest)
+        color.setHSL(0.33, 0.42, 0.26 + Math.max(0, y * 0.016))
       } else {
-        // Zone 4: West Buffer Zone (drier boundary savannah)
-        color.setHSL(0.25, 0.28, 0.13 + Math.max(0, y * 0.018))
+        // Zone 4: West Buffer Zone (woodland / meadow buffer)
+        color.setHSL(0.27, 0.36, 0.32 + Math.max(0, y * 0.016))
       }
 
       colors.push(color.r, color.g, color.b)
@@ -70,20 +70,20 @@ export default function Terrain({ selectedZone }) {
       <mesh geometry={geometry} receiveShadow>
         <meshStandardMaterial
           vertexColors
-          roughness={0.92}
-          metalness={0.04}
+          roughness={0.88}
+          metalness={0.02}
           flatShading={false}
         />
       </mesh>
 
-      {/* 2. Stylized Water River Surface - Deep realistic satellite teal */}
+      {/* 2. Stylized Water River Surface - Clean mountain river teal */}
       <mesh geometry={riverMesh}>
         <meshStandardMaterial
-          color="#1b5e68"
-          roughness={0.22}
-          metalness={0.25}
+          color="#257B88"
+          roughness={0.16}
+          metalness={0.3}
           transparent
-          opacity={0.85}
+          opacity={0.88}
         />
       </mesh>
 
@@ -92,42 +92,42 @@ export default function Terrain({ selectedZone }) {
         <edgesGeometry
           args={[new THREE.BoxGeometry(WORLD_SIZE, 0.6, WORLD_SIZE)]}
         />
-        <lineBasicMaterial color="#26353D" opacity={0.6} transparent />
+        <lineBasicMaterial color="#245E45" opacity={0.35} transparent />
       </lineSegments>
 
       {/* 4. Crosshair Zone Dividers (Subtle Boundary Grid at X=0 and Z=0) */}
       <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[WORLD_SIZE, 0.25]} />
-        <meshBasicMaterial color="#26353D" opacity={0.4} transparent />
+        <meshBasicMaterial color="#245E45" opacity={0.25} transparent />
       </mesh>
       <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
         <planeGeometry args={[WORLD_SIZE, 0.25]} />
-        <meshBasicMaterial color="#26353D" opacity={0.4} transparent />
+        <meshBasicMaterial color="#245E45" opacity={0.25} transparent />
       </mesh>
 
       {/* 5. Zone Ground Highlight Overlays (when a specific zone is selected) */}
       {isZone1 && (
         <mesh position={[-25, 0.15, -25]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[49, 49]} />
-          <meshBasicMaterial color="#27C58A" opacity={0.08} transparent />
+          <meshBasicMaterial color="#245E45" opacity={0.12} transparent />
         </mesh>
       )}
       {isZone2 && (
         <mesh position={[25, 0.15, -25]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[49, 49]} />
-          <meshBasicMaterial color="#39B8B0" opacity={0.08} transparent />
+          <meshBasicMaterial color="#1F7A78" opacity={0.12} transparent />
         </mesh>
       )}
       {isZone3 && (
         <mesh position={[-25, 0.15, 25]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[49, 49]} />
-          <meshBasicMaterial color="#A879E8" opacity={0.08} transparent />
+          <meshBasicMaterial color="#754EB4" opacity={0.12} transparent />
         </mesh>
       )}
       {isZone4 && (
         <mesh position={[25, 0.15, 25]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[49, 49]} />
-          <meshBasicMaterial color="#E8AA3A" opacity={0.08} transparent />
+          <meshBasicMaterial color="#B77A20" opacity={0.12} transparent />
         </mesh>
       )}
 
@@ -135,10 +135,10 @@ export default function Terrain({ selectedZone }) {
       <group position={[-25, 0.25, -25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
           fontSize={1.6}
-          color="#27C58A"
+          color="#163C2C"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.65}
+          fillOpacity={0.8}
           letterSpacing={0.1}
         >
           SECTOR 1 • NORTH CANOPY
@@ -148,10 +148,10 @@ export default function Terrain({ selectedZone }) {
       <group position={[25, 0.25, -25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
           fontSize={1.6}
-          color="#39B8B0"
+          color="#134D4C"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.65}
+          fillOpacity={0.8}
           letterSpacing={0.1}
         >
           SECTOR 2 • EAST RIVER BASIN
@@ -161,10 +161,10 @@ export default function Terrain({ selectedZone }) {
       <group position={[-25, 0.25, 25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
           fontSize={1.6}
-          color="#A879E8"
+          color="#482E75"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.65}
+          fillOpacity={0.8}
           letterSpacing={0.1}
         >
           SECTOR 3 • SOUTH CORRIDOR
@@ -174,10 +174,10 @@ export default function Terrain({ selectedZone }) {
       <group position={[25, 0.25, 25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
           fontSize={1.6}
-          color="#E8AA3A"
+          color="#754D12"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.65}
+          fillOpacity={0.8}
           letterSpacing={0.1}
         >
           SECTOR 4 • WEST BUFFER

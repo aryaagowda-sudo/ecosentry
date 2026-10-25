@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EcoSentry Enterprise Dashboard Stylesheet
+   EcoSentry Enterprise Dashboard Stylesheet — Professional Light Theme
    Design Inspiration: Palantir, Linear, Datadog Security Operations
    ========================================================================== */
 
@@ -41,7 +41,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 60px;
+  min-height: 56px;
 }
 
 .brand-wrapper {
@@ -56,12 +56,12 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-standard);
+  background-color: var(--accent-green);
+  border: 1px solid var(--accent-green-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-green);
+  color: #FFFFFF;
   flex-shrink: 0;
 }
 
@@ -80,7 +80,7 @@
 }
 
 .brand-subtitle {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.8px;
   color: var(--text-muted);
@@ -124,7 +124,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   padding: 4px 10px 6px;
 }
 
@@ -182,7 +182,7 @@
 }
 
 .nav-counter.neutral {
-  background-color: var(--bg-card);
+  background-color: var(--bg-app);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
 }
@@ -198,7 +198,7 @@
 }
 
 .system-status-card {
-  background-color: var(--bg-card);
+  background-color: var(--bg-app);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -260,7 +260,7 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent-teal);
+  color: var(--accent-green);
   position: relative;
 }
 
@@ -296,7 +296,7 @@
 }
 
 .top-navbar {
-  height: 52px;
+  height: 54px;
   background-color: var(--bg-header);
   border-bottom: 1px solid var(--border-standard);
   display: flex;
@@ -312,7 +312,7 @@
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .breadcrumb-trail {
@@ -325,9 +325,8 @@
 .breadcrumb-section {
   color: var(--text-muted);
   font-weight: 500;
-  text-transform: uppercase;
-  font-size: 11px;
-  letter-spacing: 0.5px;
+  text-transform: capitalize;
+  font-size: 11.5px;
 }
 
 .breadcrumb-separator {
@@ -340,13 +339,56 @@
   font-weight: 600;
 }
 
+.demo-workspace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background-color: var(--accent-green-bg);
+  border: 1px solid var(--accent-green-border);
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--accent-green);
+}
+
+.demo-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+}
+
+.sync-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sync-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+  box-shadow: 0 0 0 2px var(--accent-green-border);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .zone-selector-pill {
   display: flex;
   align-items: center;
   gap: 6px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-standard);
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-size: 11.5px;
 }
@@ -366,15 +408,9 @@
   color: var(--text-primary);
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .header-search {
   position: relative;
-  width: 240px;
+  width: 220px;
 }
 
 .header-search-icon {
@@ -407,7 +443,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 9px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-family: var(--font-mono);
   background-color: var(--bg-surface);
   padding: 1px 4px;
@@ -418,7 +454,7 @@
 .telemetry-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-standard);
   padding: 4px 10px;
@@ -432,6 +468,10 @@
   align-items: center;
   gap: 4px;
   font-family: var(--font-mono);
+}
+
+.telemetry-sep {
+  color: var(--border-standard);
 }
 
 .header-btn {
@@ -454,27 +494,38 @@
   color: var(--text-primary);
 }
 
+.notification-unread-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-red);
+}
+
 .btn-simulate-event {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-standard);
-  color: var(--accent-green);
+  background-color: var(--accent-green);
+  border: 1px solid var(--accent-green);
+  color: #FFFFFF;
   font-size: 11.5px;
   font-weight: 600;
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-simulate-event:hover {
-  background-color: var(--accent-green-bg);
-  border-color: var(--accent-green-border);
+  background-color: var(--accent-green-secondary);
+  border-color: var(--accent-green-secondary);
 }
 
 /* ==========================================================================
-   3. OVERVIEW DASHBOARD: COMPACT KPI CARDS
+   3. OVERVIEW PAGE: INTRODUCTION & NOTICE BANNER
    ========================================================================== */
 .content-body {
   padding: 16px 20px 32px;
@@ -483,6 +534,99 @@
   gap: 16px;
 }
 
+.overview-page-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0 2px;
+}
+
+.intro-text-column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.intro-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.intro-heading {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.intro-description {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.intro-actions-column {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-export-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(36, 58, 48, 0.05);
+  transition: all 0.15s ease;
+}
+
+.btn-export-summary:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.demo-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  background-color: var(--accent-amber-bg);
+  border: 1px solid var(--accent-amber-border);
+  border-radius: var(--radius-sm);
+  color: var(--accent-amber);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.demo-banner-icon {
+  flex-shrink: 0;
+  color: var(--accent-amber);
+}
+
+.demo-banner-text {
+  color: #7A5313;
+}
+
+.demo-banner-text strong {
+  color: var(--accent-amber);
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   4. ROW OF 5 COMPACT KPI CARDS
+   ========================================================================== */
 .kpi-grid-5 {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -519,12 +663,14 @@
   cursor: pointer;
   min-width: 0;
   min-height: 96px;
-  transition: border-color 0.15s, background-color 0.15s;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 
 .kpi-card:hover {
   background-color: var(--bg-card-hover);
   border-color: var(--border-hover);
+  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.08);
 }
 
 .kpi-header {
@@ -538,15 +684,45 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .kpi-icon-wrapper {
-  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.kpi-icon-wrapper.green {
+  background-color: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.kpi-icon-wrapper.blue {
+  background-color: var(--accent-blue-bg);
+  color: var(--accent-blue);
+}
+
+.kpi-icon-wrapper.purple {
+  background-color: var(--accent-purple-bg);
+  color: var(--accent-purple);
+}
+
+.kpi-icon-wrapper.critical {
+  background-color: var(--accent-red-bg);
+  color: var(--accent-red);
+}
+
+.kpi-icon-wrapper.warning {
+  background-color: var(--accent-amber-bg);
+  color: var(--accent-amber);
 }
 
 .kpi-metric-row {
@@ -558,7 +734,7 @@
 }
 
 .kpi-value {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 800;
   font-family: var(--font-mono);
   color: var(--text-primary);
@@ -567,7 +743,21 @@
   white-space: nowrap;
 }
 
-.kpi-badge {
+.kpi-value.critical-text {
+  color: var(--accent-red);
+}
+
+.kpi-value.warning-text {
+  color: var(--accent-amber);
+}
+
+.kpi-sub-total {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.kpi-status-badge {
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
@@ -577,39 +767,33 @@
   gap: 4px;
 }
 
-.kpi-badge.success {
+.kpi-status-badge.success {
   background-color: var(--accent-green-bg);
   color: var(--accent-green);
   border: 1px solid var(--accent-green-border);
 }
 
-.kpi-badge.warning {
+.kpi-status-badge.warning {
   background-color: var(--accent-amber-bg);
   color: var(--accent-amber);
   border: 1px solid var(--accent-amber-border);
 }
 
-.kpi-badge.critical {
+.kpi-status-badge.critical {
   background-color: var(--accent-red-bg);
   color: var(--accent-red);
   border: 1px solid var(--accent-red-border);
 }
 
-.kpi-badge.purple {
-  background-color: var(--accent-purple-bg);
-  color: var(--accent-purple);
-  border: 1px solid var(--accent-purple-border);
-}
-
-.kpi-badge.neutral {
+.kpi-status-badge.neutral {
   background-color: var(--bg-surface);
   color: var(--text-secondary);
   border: 1px solid var(--border-standard);
 }
 
-.kpi-footer {
-  font-size: 10.5px;
-  color: var(--text-muted);
+.kpi-footer-subtext {
+  font-size: 11px;
+  color: var(--text-secondary);
   border-top: 1px solid var(--border-subtle);
   padding-top: 6px;
   display: flex;
@@ -622,20 +806,20 @@
   text-overflow: ellipsis;
 }
 
-.kpi-footer > span:first-child {
+.kpi-sub-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.kpi-footer .highlight {
-  color: var(--text-secondary);
+.kpi-tag-subtle {
+  color: var(--text-muted);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 /* ==========================================================================
-   4. 3D FOREST SURVEILLANCE MAP CONTAINER
+   5. UPPER WORKSPACE: 3D FOREST MAP & INCIDENT RESPONSE
    ========================================================================== */
 .overview-middle-layout {
   display: grid;
@@ -660,6 +844,7 @@
   flex-direction: column;
   min-width: 0;
   height: 100%;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
 }
 
 .surveillance-map-card.dedicated-map-mode {
@@ -670,7 +855,7 @@
 .map-card-toolbar {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-standard);
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -696,8 +881,8 @@
 .sim-spec-pill {
   font-size: 10px;
   font-family: var(--font-mono);
-  color: var(--text-muted);
-  background-color: var(--bg-input);
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-standard);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
@@ -712,7 +897,7 @@
 
 .btn-group-toggle {
   display: flex;
-  background-color: var(--bg-input);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-xs);
   padding: 2px;
@@ -731,15 +916,16 @@
 }
 
 .btn-toggle-option.active {
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   color: var(--text-primary);
   border: 1px solid var(--border-standard);
+  box-shadow: 0 1px 2px rgba(36, 58, 48, 0.05);
 }
 
 .map-layer-selector {
   display: flex;
   align-items: center;
-  background-color: var(--bg-input);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-xs);
   padding: 2px;
@@ -756,9 +942,10 @@
 }
 
 .layer-chip.active {
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   color: var(--accent-green);
   border: 1px solid var(--border-standard);
+  box-shadow: 0 1px 2px rgba(36, 58, 48, 0.05);
 }
 
 .layer-chip:hover:not(.active) {
@@ -768,7 +955,7 @@
 /* Dedicated Map Sector Filter Strip */
 .dedicated-sector-strip {
   padding: 6px 14px;
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   border-bottom: 1px solid var(--border-standard);
   display: flex;
   align-items: center;
@@ -792,7 +979,7 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: var(--radius-xs);
-  background-color: var(--bg-card);
+  background-color: #FFFFFF;
   border: 1px solid var(--border-standard);
   color: var(--text-secondary);
   transition: all 0.15s ease;
@@ -805,10 +992,9 @@
 }
 
 .sector-strip-btn.active {
-  background-color: var(--bg-input);
+  background-color: var(--bg-surface);
   color: var(--text-primary);
-  border-color: var(--accent-teal);
-  box-shadow: inset 0 0 0 1px var(--accent-teal-border);
+  border-color: var(--accent-green);
 }
 
 .sector-strip-btn .sector-dot {
@@ -821,7 +1007,7 @@
 .map-canvas-container {
   position: relative;
   height: 520px;
-  background-color: #081014;
+  background-color: #EBF0EA; /* Soft daylight sky tone */
   overflow: hidden;
   width: 100%;
   flex: 1;
@@ -859,10 +1045,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background-color: rgba(13, 21, 25, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
   padding: 3px 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-standard);
+  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.08);
   backdrop-filter: blur(4px);
   z-index: 10;
 }
@@ -894,7 +1081,7 @@
 .hud-zone-btn.active {
   background-color: var(--bg-surface);
   color: var(--accent-green);
-  border-color: var(--border-standard);
+  border-color: var(--accent-green-border);
 }
 
 .hud-camera-actions {
@@ -915,39 +1102,40 @@
   font-weight: 600;
   padding: 3px 8px;
   border-radius: var(--radius-sm);
-  background-color: rgba(13, 21, 25, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--border-standard);
   color: var(--text-secondary);
+  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.08);
   backdrop-filter: blur(4px);
   transition: all 0.15s;
 }
 
 .hud-action-btn:hover {
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   color: var(--text-primary);
   border-color: var(--border-hover);
 }
 
 .hud-action-btn.active {
   background-color: var(--bg-surface);
-  color: var(--accent-teal);
-  border-color: var(--accent-teal-border);
+  color: var(--accent-green);
+  border-color: var(--accent-green-border);
 }
 
-/* 3D Marker Tags & Pins - Prioritized, Collision-Free Hierarchy */
+/* 3D Marker Tags & Pins — Clean Light Mode Pills */
 .marker-3d-pin {
   display: flex;
   align-items: center;
   gap: 5px;
-  background-color: rgba(17, 27, 32, 0.94);
+  background-color: rgba(255, 255, 255, 0.97);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-xs);
   padding: 3px 6px;
   font-size: 11px;
   color: var(--text-primary);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(36, 58, 48, 0.12);
+  backdrop-filter: blur(4px);
   user-select: none;
   pointer-events: auto;
   transition: all 0.15s ease-out;
@@ -991,36 +1179,35 @@
 
 .marker-3d-pin:hover,
 .marker-3d-pin.expanded {
-  border-color: var(--border-focus);
+  border-color: var(--accent-green);
   transform: translateY(-2px) scale(1.04);
-  background-color: rgba(22, 34, 41, 0.98);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+  background-color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(36, 58, 48, 0.16);
   z-index: 50;
 }
 
 /* Sensor Marker Accents */
 .marker-3d-pin.sensor.camera {
-  border-left: 2px solid var(--accent-teal);
+  border-left: 2.5px solid var(--accent-teal);
 }
 .marker-3d-pin.sensor.acoustic {
-  border-left: 2px solid var(--accent-green);
+  border-left: 2.5px solid var(--accent-green);
 }
 .marker-3d-pin.sensor.offline {
-  border-left: 2px solid var(--text-dim);
-  opacity: 0.75;
+  border-left: 2.5px solid var(--text-muted);
+  opacity: 0.8;
 }
 
 /* Threat Marker Accents */
 .marker-3d-pin.threat {
-  border-left: 2.5px solid var(--accent-red);
-  background-color: rgba(24, 18, 20, 0.95);
+  border-left: 3px solid var(--accent-red);
 }
 .marker-3d-pin.threat.high {
   border-left-color: var(--accent-amber);
 }
 .marker-3d-pin.threat.priority {
   border-left: 3px solid var(--accent-red);
-  background-color: rgba(36, 18, 20, 0.96);
+  background-color: #FFFFFF;
 }
 .marker-3d-pin.threat .pin-priority-content {
   display: flex;
@@ -1039,24 +1226,7 @@
 
 /* Wildlife Marker Accents */
 .marker-3d-pin.wildlife {
-  border-left: 2px solid var(--accent-purple);
-}
-
-/* Legacy Tag Compatibility */
-.marker-3d-tag {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background-color: rgba(17, 27, 32, 0.95);
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-xs);
-  padding: 3px 6px;
-  font-size: 10.5px;
-  color: var(--text-primary);
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(4px);
-  white-space: nowrap;
+  border-left: 2.5px solid var(--accent-purple);
 }
 
 /* Map HUD Legend */
@@ -1064,11 +1234,12 @@
   position: absolute;
   bottom: 24px;
   left: 10px;
-  background-color: rgba(13, 21, 25, 0.92);
+  background-color: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 10.5px;
+  box-shadow: 0 2px 8px rgba(36, 58, 48, 0.08);
   backdrop-filter: blur(4px);
   z-index: 10;
 }
@@ -1080,7 +1251,7 @@
   font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 3px;
   margin-bottom: 5px;
@@ -1104,26 +1275,27 @@
   bottom: 6px;
   right: 10px;
   font-size: 9.5px;
-  color: var(--text-dim);
-  background-color: rgba(11, 17, 20, 0.7);
-  padding: 1px 6px;
+  color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
   border-radius: 2px;
+  border: 1px solid var(--border-standard);
   pointer-events: none;
 }
 
 .map-disclaimer-strip {
   padding: 6px 14px;
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 10.5px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* ==========================================================================
-   5. THREAT ALERTS PANEL
+   6. INCIDENT RESPONSE PANEL (THREAT ALERTS)
    ========================================================================== */
 .threat-panel-card {
   background-color: var(--bg-card);
@@ -1135,12 +1307,13 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
 }
 
 .threat-panel-header {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-standard);
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1160,10 +1333,16 @@
   margin: 0;
 }
 
+.threat-panel-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
 .threat-filter-controls {
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-subtle);
-  background-color: var(--bg-card);
+  background-color: var(--bg-app);
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
@@ -1203,18 +1382,20 @@
 }
 
 .alert-item-card {
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 0.15s;
+  box-shadow: 0 1px 2px rgba(36, 58, 48, 0.03);
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
 .alert-item-card:hover {
   border-color: var(--border-hover);
+  background-color: var(--bg-card-hover);
 }
 
 .alert-item-card.critical {
@@ -1234,8 +1415,8 @@
 }
 
 .alert-item-card.resolved {
-  border-left: 3px solid var(--text-dim);
-  opacity: 0.65;
+  border-left: 3px solid var(--text-muted);
+  opacity: 0.7;
 }
 
 .alert-top-meta {
@@ -1290,7 +1471,7 @@
   align-items: center;
   gap: 4px;
   border: 1px solid var(--border-standard);
-  background-color: var(--bg-card);
+  background-color: var(--bg-input);
   color: var(--text-secondary);
   transition: all 0.15s;
 }
@@ -1309,7 +1490,7 @@
 
 .btn-action-sm.primary-ack:hover {
   background-color: var(--accent-amber);
-  color: #0B1114;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
@@ -1321,12 +1502,315 @@
 
 .btn-action-sm.primary-resolve:hover {
   background-color: var(--accent-green);
-  color: #0B1114;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
+.threat-panel-footer-advisory {
+  padding: 8px 12px;
+  background-color: var(--accent-amber-bg);
+  border-top: 1px solid var(--accent-amber-border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #7A5313;
+}
+
 /* ==========================================================================
-   6. TABLES: INCIDENT HISTORY & SENSOR MANAGEMENT
+   7. LOWER WORKSPACE: SENSOR HEALTH & WILDLIFE SUMMARY
+   ========================================================================== */
+.overview-lower-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .overview-lower-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sensor-health-card,
+.wildlife-summary-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
+}
+
+.panel-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.panel-subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.btn-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-green);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-text-link:hover {
+  text-decoration: underline;
+  color: var(--accent-green-secondary);
+}
+
+.health-metrics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.health-metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-item-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.metric-label-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metric-value-text {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--bg-surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.green {
+  background-color: var(--accent-green);
+}
+
+.progress-bar-fill.teal {
+  background-color: var(--accent-teal);
+}
+
+.progress-bar-fill.blue {
+  background-color: var(--accent-blue);
+}
+
+.offline-maintenance-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--accent-amber-bg);
+  border: 1px solid var(--accent-amber-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.alert-icon-box {
+  flex-shrink: 0;
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent-amber);
+}
+
+.alert-desc {
+  font-size: 11px;
+  color: #7A5313;
+  margin-top: 1px;
+}
+
+.btn-quick-reconnect {
+  padding: 4px 10px;
+  background-color: var(--accent-amber);
+  color: #FFFFFF;
+  border-radius: var(--radius-xs);
+  font-size: 10.5px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+
+.btn-quick-reconnect:hover {
+  background-color: #9D6415;
+}
+
+.nominal-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--accent-green-bg);
+  border: 1px solid var(--accent-green-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: var(--accent-green);
+}
+
+/* Wildlife Summary Mini Table */
+.summary-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.summary-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.summary-data-table th {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-standard);
+  padding: 6px 8px;
+  text-align: left;
+  background-color: var(--bg-card);
+}
+
+.summary-data-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.summary-table-row:hover td {
+  background-color: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.species-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.species-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-green);
+}
+
+.species-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.zone-tag-mini {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.source-sensor-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.match-pill {
+  background-color: var(--accent-green-bg);
+  color: var(--accent-green);
+  border: 1px solid var(--accent-green-border);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.time-text {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.btn-inspect-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-xs);
+  background-color: #FFFFFF;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.btn-inspect-mini:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.table-footer-disclaimer {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding-top: 4px;
+}
+
+/* ==========================================================================
+   8. DATA TABLES: INCIDENT HISTORY & SENSOR MANAGEMENT
    ========================================================================== */
 .data-panel-card {
   background-color: var(--bg-card);
@@ -1336,12 +1820,13 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
 }
 
 .data-panel-toolbar {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-standard);
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1401,7 +1886,7 @@
   font-weight: 600;
   padding: 4px 10px;
   border-radius: var(--radius-xs);
-  background-color: var(--bg-input);
+  background-color: #FFFFFF;
   border: 1px solid var(--border-standard);
   color: var(--text-secondary);
   transition: all 0.15s;
@@ -1433,29 +1918,28 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--text-muted);
-  background-color: rgba(13, 21, 25, 0.7);
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border-standard);
   white-space: nowrap;
 }
 
 .standard-data-table td {
   padding: 10px 14px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
 
 .standard-data-table tr:hover td {
   background-color: var(--bg-card-hover);
-  color: var(--text-primary);
 }
 
 .code-id-cell {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent-teal);
+  color: var(--accent-green);
   white-space: nowrap;
 }
 
@@ -1527,17 +2011,17 @@
 
 .btn-sim-power.reconnect:hover {
   background-color: var(--accent-green);
-  color: #0B1114;
+  color: #FFFFFF;
   font-weight: 700;
 }
 
 /* ==========================================================================
-   7. MODAL INSPECTION DIALOG
+   9. MODAL INSPECTION DIALOG
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(11, 17, 20, 0.85);
+  background-color: var(--bg-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -1547,7 +2031,7 @@
 }
 
 .modal-dialog-box {
-  background-color: var(--bg-card);
+  background-color: #FFFFFF;
   border: 1px solid var(--border-standard);
   border-radius: var(--radius-md);
   width: 100%;
@@ -1565,7 +2049,7 @@
 .modal-dialog-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-standard);
-  background-color: var(--bg-surface);
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1593,7 +2077,7 @@
 }
 
 .btn-modal-close:hover {
-  background-color: var(--bg-input);
+  background-color: var(--bg-surface);
   color: var(--text-primary);
 }
 
@@ -1608,7 +2092,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  background-color: var(--bg-surface);
+  background-color: var(--bg-app);
   padding: 10px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
@@ -1641,7 +2125,7 @@
   display: flex;
   gap: 8px;
   font-size: 11px;
-  color: var(--accent-amber);
+  color: #7A5313;
   line-height: 1.35;
 }
 
@@ -1654,7 +2138,7 @@
 }
 
 /* ==========================================================================
-   8. DEDICATED VIEWS: WILDLIFE DETECTIONS, ANALYTICS, SETTINGS
+   10. DEDICATED SUB-VIEWS: WILDLIFE, ANALYTICS, SETTINGS
    ========================================================================== */
 .view-grid-gallery {
   display: grid;
@@ -1670,6 +2154,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
   transition: border-color 0.15s, background-color 0.15s;
 }
 
@@ -1717,6 +2202,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
 }
 
 .chart-header-row {
@@ -1779,6 +2265,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.04);
 }
 
 .settings-form-group {
@@ -1816,12 +2303,12 @@
 }
 
 /* ==========================================================================
-   9. 2D TACTICAL MAP FALLBACK
+   11. 2D TACTICAL MAP FALLBACK
    ========================================================================== */
 .tactical-map-viewport {
   position: relative;
   height: 460px;
-  background-color: #081014;
+  background-color: #F0F4F0;
   overflow: hidden;
   border-bottom: 1px solid var(--border-standard);
 }
@@ -1830,8 +2317,8 @@
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(to right, rgba(38, 53, 61, 0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(38, 53, 61, 0.25) 1px, transparent 1px);
+    linear-gradient(to right, rgba(36, 94, 69, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(36, 94, 69, 0.08) 1px, transparent 1px);
   background-size: 25px 25px;
   pointer-events: none;
 }
@@ -1858,7 +2345,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-standard);
-  box-shadow: var(--shadow-sm);
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.12);
   transition: transform 0.15s;
 }
 
@@ -1881,7 +2369,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-standard);
-  box-shadow: var(--shadow-sm);
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(36, 58, 48, 0.15);
   transition: transform 0.15s;
 }
 
@@ -1890,7 +2379,28 @@
 }
 
 /* ==========================================================================
-   10. DEDICATED VIEW GRIDS & RESPONSIVE BEHAVIOR
+   12. RESTRAINED FOOTER DISCLAIMER
+   ========================================================================== */
+.overview-footer-disclaimer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 14px 0 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.footer-coords {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   13. RESPONSIVE BEHAVIOR
    ========================================================================== */
 .analytics-charts-grid {
   display: grid;
@@ -1927,7 +2437,7 @@
     padding: 3px 6px;
   }
   .telemetry-chip .telemetry-metric:nth-child(3),
-  .telemetry-chip span:nth-child(2) {
+  .telemetry-chip .telemetry-sep:nth-child(2) {
     display: none;
   }
 }
@@ -1980,5 +2490,3 @@
     gap: 14px;
   }
 }
-
-

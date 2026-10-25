@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from 'react'
+import { Download, AlertTriangle, ShieldCheck } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import TopNav from './components/TopNav'
 import OverviewCards from './components/OverviewCards'
 import ForestMapContainer from './components/forest3d/ForestMapContainer'
 import ThreatAlertsPanel from './components/ThreatAlertsPanel'
+import SensorHealthPanel from './components/SensorHealthPanel'
+import WildlifeSummaryTable from './components/WildlifeSummaryTable'
 import IncidentHistoryTable from './components/IncidentHistoryTable'
 import SensorManagementView from './components/SensorManagementView'
 import WildlifeDetectionsView from './components/WildlifeDetectionsView'
@@ -141,6 +144,35 @@ export default function App() {
     setSelectedItem({ itemType: 'event', data: alertItem })
   }
 
+  // Export summary action (downloads reserve operations audit JSON)
+  const handleExportSummary = () => {
+    const summaryData = {
+      platform: 'EcoSentry Wildlife Intelligence',
+      exportTimestamp: new Date().toISOString(),
+      operationalStats: stats,
+      activeIncidents: events.filter((e) => e.status === 'active'),
+      sensorsSummary: sensors.map((s) => ({
+        id: s.id,
+        name: s.name,
+        type: s.type,
+        status: s.status,
+        battery: s.battery,
+        zone: s.zoneName
+      }))
+    }
+    const blob = new Blob([JSON.stringify(summaryData, null, 2)], {
+      type: 'application/json'
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `ecosentry-operations-summary-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="dashboard-container">
       {/* 1. ENTERPRISE SIDEBAR NAVIGATION */}
@@ -169,13 +201,42 @@ export default function App() {
           {/* TAB: OVERVIEW (Default Security Command Center) */}
           {activeNav === 'overview' && (
             <>
-              {/* Compact Overview KPI Cards */}
+              {/* 1. Page Introduction Header */}
+              <div className="overview-page-intro">
+                <div className="intro-text-column">
+                  <span className="intro-eyebrow">CIVIC TERRAIN / RESERVE OPERATIONS</span>
+                  <h1 className="intro-heading">A clearer view of the reserve.</h1>
+                  <p className="intro-description">
+                    Reserve-wide visibility. Prioritize, verify and coordinate a response across all 4 sectors.
+                  </p>
+                </div>
+                <div className="intro-actions-column">
+                  <button
+                    className="btn-export-summary"
+                    onClick={handleExportSummary}
+                    title="Export reserve operations audit report as JSON"
+                  >
+                    <Download size={14} />
+                    <span>Export Summary</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Simulation & Verification Amber Notice Banner */}
+              <div className="demo-alert-banner">
+                <AlertTriangle size={15} className="demo-banner-icon" />
+                <div className="demo-banner-text">
+                  <strong>DEMO / SIMULATED DATA</strong> — Acoustic and optical matches are unverified, not proof of poaching. Ground-ranger verification is required before operational dispatch.
+                </div>
+              </div>
+
+              {/* 3. Row of 5 Compact Overview KPI Cards */}
               <OverviewCards
                 stats={stats}
                 onSelectCardTab={(tab) => setActiveNav(tab)}
               />
 
-              {/* Middle Row: 3D Forest Reserve & Threat Alerts Panel */}
+              {/* 4. Upper Workspace: 3D Forest Surveillance (~2/3) & Incident Response (~1/3) */}
               <div className="overview-middle-layout">
                 <ForestMapContainer
                   zones={SIMULATED_ZONES}
@@ -198,7 +259,24 @@ export default function App() {
                 />
               </div>
 
-              {/* Lower Section: Incident History Table */}
+              {/* 5. Lower Workspace: Sensor Network Health & Wildlife Sightings Table */}
+              <div className="overview-lower-layout">
+                <SensorHealthPanel
+                  stats={stats}
+                  sensors={sensors}
+                  onNavigateToSensors={() => setActiveNav('sensors')}
+                  onToggleSensor={handleToggleSensor}
+                />
+
+                <WildlifeSummaryTable
+                  events={events}
+                  zones={SIMULATED_ZONES}
+                  onNavigateToWildlife={() => setActiveNav('wildlife')}
+                  onInspectEvent={handleInspectEvent}
+                />
+              </div>
+
+              {/* 6. Lower Section: Full Incident History Audit Log */}
               <IncidentHistoryTable
                 events={events}
                 zones={SIMULATED_ZONES}
@@ -208,6 +286,12 @@ export default function App() {
                 onResolve={handleResolve}
                 onInspectEvent={handleInspectEvent}
               />
+
+              {/* 7. Restrained Enterprise Footer Disclaimer */}
+              <footer className="overview-footer-disclaimer">
+                <span>EcoSentry Wildlife Intelligence Platform • Simulated telemetry & acoustic classifications for academic demonstration.</span>
+                <span className="footer-coords">Simulated Datum: WGS84 • 12.450°N, 76.140°E</span>
+              </footer>
             </>
           )}
 

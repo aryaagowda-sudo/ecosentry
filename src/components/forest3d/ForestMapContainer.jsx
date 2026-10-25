@@ -52,7 +52,7 @@ export default function ForestMapContainer({
         <div className="map-toolbar-left">
           <div className="map-card-title">
             <Compass size={15} style={{ color: 'var(--accent-green)' }} />
-            <span>3D Forest Surveillance Grid</span>
+            <span>Reserve surveillance · 3D</span>
           </div>
           <span className="sim-spec-pill">
             {selectedZone === 'all'
