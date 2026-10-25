@@ -7,19 +7,24 @@ import { gridToWorld } from './terrainHelper'
 export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
   const ringRef = useRef()
   const [hovered, setHovered] = useState(false)
-  const [worldX, worldY, worldZ] = gridToWorld(
+  
+  // Calculate world coordinates
+  const [baseX, baseY, baseZ] = gridToWorld(
     event.coordinates.x,
     event.coordinates.y
   )
 
+  // Minor radial offset to ensure clean visual separation from the nearby monitoring sensor post
+  const worldX = baseX + 1.2
+  const worldZ = baseZ + 1.2
+  const worldY = baseY
+
   const isCritical = event.priority === 'critical'
   const isHigh = event.priority === 'high'
   const isResolved = event.status === 'resolved'
-  const isActive = event.status === 'active'
-  const isPriorityEvent = (isCritical || isHigh) && isActive
   const activeHighlight = hovered || isSelected
 
-  const color = isResolved
+  const accentColor = isResolved
     ? '#829286'
     : isCritical
     ? '#C94232'
@@ -31,42 +36,51 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
   useFrame((state, delta) => {
     if (ringRef.current && !isResolved) {
       ringRef.current.rotation.z += delta * 1.5
-      const s = 1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.25
+      const s = 1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.22
       ringRef.current.scale.set(s, s, s)
     }
   })
 
   // Select appropriate Lucide icon
   const getIcon = () => {
-    const size = 12
+    const size = 11
     switch (event.type) {
       case 'chainsaw_sound':
-        return <Volume2 size={size} style={{ color }} />
+        return <Volume2 size={size} style={{ color: accentColor }} />
       case 'gunshot_sound':
-        return <Flame size={size} style={{ color }} />
+        return <Flame size={size} style={{ color: accentColor }} />
       case 'human_detection':
-        return <User size={size} style={{ color }} />
+        return <User size={size} style={{ color: accentColor }} />
       case 'animal_boundary_crossing':
         return <Footprints size={size} style={{ color: 'var(--accent-purple)' }} />
       default:
-        return <ShieldAlert size={size} style={{ color }} />
+        return <ShieldAlert size={size} style={{ color: accentColor }} />
     }
+  }
+
+  // Compact threat label title (e.g. "Chainsaw", "Gunshot", "Human Trespass")
+  const getShortLabel = () => {
+    if (event.type === 'chainsaw_sound') return 'Chainsaw'
+    if (event.type === 'gunshot_sound') return 'Gunshot'
+    if (event.type === 'human_detection') return 'Human'
+    if (event.type === 'animal_boundary_crossing') return 'Boundary'
+    return 'Incident'
   }
 
   return (
     <group position={[worldX, worldY, worldZ]}>
-      {/* 1. Ground Alert Ring */}
+      {/* 1. Pulsing Ground Alert Ring */}
       {!isResolved && (
         <mesh
           ref={ringRef}
-          position={[0, 0.15, 0]}
+          position={[0, 0.2, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
         >
-          <ringGeometry args={[1.2, 1.8, 24]} />
+          <ringGeometry args={[1.0, 1.6, 24]} />
           <meshBasicMaterial
-            color={color}
+            color={accentColor}
             transparent
-            opacity={isCritical ? 0.75 : 0.5}
+            opacity={isCritical ? 0.75 : 0.55}
             side={2}
           />
         </mesh>
@@ -74,56 +88,50 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
 
       {/* 2. Vertical Light Pillar Beacon */}
       {!isResolved && (
-        <mesh position={[0, 4.0, 0]}>
-          <cylinderGeometry args={[0.06, 0.3, 8.0, 8]} />
+        <mesh position={[0, 3.2, 0]}>
+          <cylinderGeometry args={[0.04, 0.22, 6.4, 8]} />
           <meshBasicMaterial
-            color={color}
+            color={accentColor}
             transparent
-            opacity={isCritical ? 0.4 : 0.25}
+            opacity={isCritical ? 0.35 : 0.2}
           />
         </mesh>
       )}
 
-      {/* 3. Floating 3D Interactive Tag - Elevated to y=4.4 to sit above sensor markers */}
+      {/* 3. Compact Threat Tag (Elevated to y=4.4 to sit comfortably above sensors) */}
       <Html
         position={[0, 4.4, 0]}
         center
-        distanceFactor={48}
-        zIndexRange={[320, 180]}
+        distanceFactor={52}
+        zIndexRange={[260, 140]}
       >
         <div
-          className={`marker-3d-pin threat ${event.priority} ${event.status} ${activeHighlight ? 'expanded' : isPriorityEvent ? 'priority' : 'compact'}`}
+          className={`compact-threat-tag ${event.priority} ${event.status} ${activeHighlight ? 'selected' : ''}`}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           onClick={(e) => {
             e.stopPropagation()
             onSelectEvent({ itemType: 'event', data: event })
           }}
-          title={`${event.title} (${event.id}) • Click to inspect`}
+          title={`${event.title} (${event.id}) • Click to inspect incident`}
         >
-          <div className="pin-icon-wrap">{getIcon()}</div>
+          <div className="threat-tag-icon">{getIcon()}</div>
+          <span className="threat-tag-text">{getShortLabel()}</span>
 
-          {activeHighlight ? (
-            <div className="pin-expanded-content">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span className="pin-title">{event.title}</span>
-                <span className={`status-tag ${event.priority}`} style={{ padding: '0 4px', fontSize: '9px' }}>
-                  {event.priority}
+          {/* Expanded tooltip on hover/select */}
+          {activeHighlight && (
+            <div className="tag-hover-tooltip threat">
+              <div className="tooltip-title">{event.title}</div>
+              <div className="tooltip-meta">
+                <span>ID: {event.id}</span>
+                <span>•</span>
+                <span>
+                  {event.confidence ? `${Math.round(event.confidence * 100)}% match` : 'Hardware'}
                 </span>
+                <span>•</span>
+                <span style={{ textTransform: 'uppercase' }}>{event.status}</span>
               </div>
-              <span className="pin-meta">
-                {event.id} • {event.confidence ? `${Math.round(event.confidence * 100)}% match` : 'Hardware'} • {event.status.toUpperCase()}
-              </span>
             </div>
-          ) : isPriorityEvent ? (
-            <div className="pin-priority-content">
-              <span className="pin-title">{event.title.split(' ')[0]} Alert</span>
-              {event.confidence !== null && (
-                <span className="pin-conf-badge">{Math.round(event.confidence * 100)}%</span>
-              )}
-            </div>
-          ) : (
-            <span className="pin-label-mini">!</span>
           )}
         </div>
       </Html>

@@ -186,38 +186,43 @@ export default function WildlifeModel3D({ event, onSelectWildlife, isSelected })
         </group>
       )}
 
-      {/* Floating 3D Interactive Wildlife Tag */}
+      {/* Floating 3D Interactive Wildlife Tag — Compact & Anti-Collision */}
       <Html
-        position={[0, 3.2, 0]}
+        position={[0, 3.5, 0]}
         center
-        distanceFactor={50}
-        zIndexRange={[180, 80]}
+        distanceFactor={52}
+        zIndexRange={[200, 100]}
       >
         <div
-          className={`marker-3d-pin wildlife ${activeHighlight ? 'expanded' : 'compact'}`}
+          className={`compact-wildlife-tag ${activeHighlight ? 'selected' : ''}`}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           onClick={(e) => {
             e.stopPropagation()
             onSelectWildlife({ itemType: 'event', data: event })
           }}
-          title={`${event.title} • Click to inspect`}
+          title={`${event.title} • Click to inspect fauna detection`}
         >
-          <div className="pin-icon-wrap">
+          <div className="wildlife-tag-icon">
             <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
           </div>
 
-          {activeHighlight ? (
-            <div className="pin-expanded-content">
-              <span className="pin-title">{event.title.split('(')[0].trim()}</span>
-              <span className="pin-meta" style={{ color: 'var(--accent-purple)' }}>
-                {Math.round((event.confidence || 0) * 100)}% match
-              </span>
+          <span className="wildlife-tag-text">
+            {event.title.includes('Elephant') ? 'Elephant' : event.title.includes('Tiger') ? 'Tiger' : event.title.includes('Leopard') ? 'Leopard' : 'Fauna'}
+          </span>
+
+          {/* Rich Tooltip only on hover or selection */}
+          {activeHighlight && (
+            <div className="tag-hover-tooltip wildlife">
+              <div className="tooltip-title">{event.title}</div>
+              <div className="tooltip-meta">
+                <span>{event.id}</span>
+                <span>•</span>
+                <span>{Math.round((event.confidence || 0) * 100)}% match</span>
+                <span>•</span>
+                <span>{event.timeAgo}</span>
+              </div>
             </div>
-          ) : (
-            <span className="pin-label-mini">
-              {event.title.includes('Elephant') ? 'Ele' : event.title.includes('Tiger') ? 'Tig' : 'Deer'}
-            </span>
           )}
         </div>
       </Html>

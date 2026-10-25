@@ -10,42 +10,61 @@ import SensorMarker3D from './SensorMarker3D'
 import ThreatMarker3D from './ThreatMarker3D'
 import WildlifeModel3D from './WildlifeModel3D'
 
-// Camera Rig Helper to animate camera to specific presets (default, top-down, zone focus)
+// Camera Rig Helper to animate camera to specific presets (default isometric, top-down, zone focus)
 function CameraController({ cameraTarget, isTopDown }) {
   const { camera } = useThree()
   const controlsRef = useRef()
 
   useEffect(() => {
     if (isTopDown) {
-      camera.position.set(0, 85, 0.01)
-      camera.lookAt(0, 0, 0)
+      camera.position.set(0, 92, 0.01)
+      camera.lookAt(0, 2, 0)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 2, 0)
+      }
     } else if (cameraTarget === 'zone-1') {
-      camera.position.set(-25, 35, 10)
-      camera.lookAt(-25, 0, -25)
+      camera.position.set(-20, 36, 12)
+      camera.lookAt(-25, 6, -25)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(-25, 6, -25)
+      }
     } else if (cameraTarget === 'zone-2') {
-      camera.position.set(25, 35, 10)
-      camera.lookAt(25, 0, -25)
+      camera.position.set(24, 34, 12)
+      camera.lookAt(25, 4, -25)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(25, 4, -25)
+      }
     } else if (cameraTarget === 'zone-3') {
-      camera.position.set(-25, 35, 55)
-      camera.lookAt(-25, 0, 25)
+      camera.position.set(-20, 34, 58)
+      camera.lookAt(-25, 4, 25)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(-25, 4, 25)
+      }
     } else if (cameraTarget === 'zone-4') {
-      camera.position.set(25, 35, 55)
-      camera.lookAt(25, 0, 25)
+      camera.position.set(24, 34, 58)
+      camera.lookAt(25, 3, 25)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(25, 3, 25)
+      }
     } else {
-      // Default isometric overview
-      camera.position.set(0, 52, 60)
-      camera.lookAt(0, 0, 0)
+      // Default elevated, oblique isometric overview of the entire reserve
+      camera.position.set(52, 48, 52)
+      camera.lookAt(0, 2, 0)
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 2, 0)
+      }
     }
   }, [cameraTarget, isTopDown, camera])
 
   return (
     <OrbitControls
       ref={controlsRef}
+      target={[0, 2, 0]}
       enableDamping
-      dampingFactor={0.08}
-      minDistance={16}
-      maxDistance={125}
-      maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.05}
+      dampingFactor={0.06}
+      minDistance={18}
+      maxDistance={135}
+      maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.12}
       minPolarAngle={0}
     />
   )
@@ -127,29 +146,29 @@ export default function ForestCanvas({
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Canvas
-          camera={{ position: [0, 52, 60], fov: 42, near: 0.5, far: 250 }}
+          camera={{ position: [52, 48, 52], fov: 38, near: 0.5, far: 300 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           onCreated={({ gl, scene }) => {
             gl.setClearColor(new THREE.Color('#EBF0EA'))
-            scene.fog = new THREE.FogExp2('#EBF0EA', 0.005)
+            scene.fog = new THREE.FogExp2('#EBF0EA', 0.003)
           }}
         >
           {/* Natural Atmospheric Daylight Lighting */}
-          <ambientLight color="#EBF3EC" intensity={0.95} />
+          <ambientLight color="#EBF3EC" intensity={1.05} />
           <directionalLight
-            position={[35, 52, 30]}
-            intensity={1.45}
+            position={[45, 62, 38]}
+            intensity={1.5}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
             shadow-camera-near={10}
-            shadow-camera-far={120}
-            shadow-camera-left={-55}
-            shadow-camera-right={55}
-            shadow-camera-top={55}
-            shadow-camera-bottom={-55}
+            shadow-camera-far={140}
+            shadow-camera-left={-60}
+            shadow-camera-right={60}
+            shadow-camera-top={60}
+            shadow-camera-bottom={-60}
             color="#FFFDF5"
           />
           <hemisphereLight skyColor="#E2EFE4" groundColor="#CADACA" intensity={0.65} />

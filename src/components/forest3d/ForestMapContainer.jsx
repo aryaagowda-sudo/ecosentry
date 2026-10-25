@@ -255,14 +255,14 @@ export default function ForestMapContainer({
                 <div className="legend-entry">
                   <span
                     style={{
-                      width: 6,
-                      height: 6,
+                      width: 7,
+                      height: 7,
                       borderRadius: '50%',
-                      backgroundColor: 'var(--text-dim)',
+                      backgroundColor: 'var(--accent-amber)',
                       display: 'inline-block'
                     }}
                   />
-                  <span>Sensor Offline (Gray)</span>
+                  <span>Sensor Offline (Amber)</span>
                 </div>
                 <div className="legend-entry">
                   <span
