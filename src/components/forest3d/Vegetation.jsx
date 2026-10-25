@@ -12,6 +12,8 @@ import { INITIAL_SENSORS, INITIAL_EVENTS, ANIMAL_TRAILS } from '../../data/mockD
 export default function Vegetation() {
   const pineTrunkRef = useRef()
   const pineFoliageRef = useRef()
+  const pineFoliageMidRef = useRef()
+  const pineFoliageLowRef = useRef()
   const broadleafTrunkRef = useRef()
   const broadleafFoliageRef = useRef()
   const broadleafFoliageMidRef = useRef()
@@ -140,7 +142,7 @@ export default function Vegetation() {
     const dummy = new THREE.Object3D()
 
     // 1. Pines
-    if (pineTrunkRef.current && pineFoliageRef.current) {
+    if (pineTrunkRef.current && pineFoliageRef.current && pineFoliageMidRef.current && pineFoliageLowRef.current) {
       pineList.forEach((tree, i) => {
         // Trunk
         dummy.position.set(tree.x, tree.y + 1.2 * tree.scale, tree.z)
@@ -149,16 +151,34 @@ export default function Vegetation() {
         dummy.updateMatrix()
         pineTrunkRef.current.setMatrixAt(i, dummy.matrix)
 
-        // Foliage
-        dummy.position.set(tree.x, tree.y + 2.8 * tree.scale, tree.z)
-        dummy.scale.set(tree.scale * 1.04, tree.scale * 1.12, tree.scale * 1.04)
+        // Three offset tiers create a fuller, irregular conifer silhouette.
+        dummy.position.set(tree.x, tree.y + 2.55 * tree.scale, tree.z)
+        dummy.scale.set(tree.scale * 0.9, tree.scale * 0.82, tree.scale * 0.9)
         dummy.updateMatrix()
         pineFoliageRef.current.setMatrixAt(i, dummy.matrix)
-        pineFoliageRef.current.setColorAt(i, new THREE.Color().setHSL(0.34 + (i % 5) * 0.006, 0.38, 0.22 + (i % 4) * 0.018))
+
+        dummy.position.set(tree.x + 0.1 * tree.scale, tree.y + 3.45 * tree.scale, tree.z - 0.04 * tree.scale)
+        dummy.scale.set(tree.scale * 0.72, tree.scale * 0.7, tree.scale * 0.72)
+        dummy.updateMatrix()
+        pineFoliageMidRef.current.setMatrixAt(i, dummy.matrix)
+
+        dummy.position.set(tree.x - 0.08 * tree.scale, tree.y + 4.12 * tree.scale, tree.z + 0.03 * tree.scale)
+        dummy.scale.set(tree.scale * 0.52, tree.scale * 0.58, tree.scale * 0.52)
+        dummy.updateMatrix()
+        pineFoliageLowRef.current.setMatrixAt(i, dummy.matrix)
+
+        const shade = 0.22 + (i % 4) * 0.018
+        pineFoliageRef.current.setColorAt(i, new THREE.Color().setHSL(0.34 + (i % 5) * 0.006, 0.38, shade))
+        pineFoliageMidRef.current.setColorAt(i, new THREE.Color().setHSL(0.35 + (i % 5) * 0.006, 0.36, shade + 0.045))
+        pineFoliageLowRef.current.setColorAt(i, new THREE.Color().setHSL(0.35 + (i % 5) * 0.006, 0.34, shade + 0.075))
       })
       pineTrunkRef.current.instanceMatrix.needsUpdate = true
       pineFoliageRef.current.instanceMatrix.needsUpdate = true
+      pineFoliageMidRef.current.instanceMatrix.needsUpdate = true
+      pineFoliageLowRef.current.instanceMatrix.needsUpdate = true
       if (pineFoliageRef.current.instanceColor) pineFoliageRef.current.instanceColor.needsUpdate = true
+      if (pineFoliageMidRef.current.instanceColor) pineFoliageMidRef.current.instanceColor.needsUpdate = true
+      if (pineFoliageLowRef.current.instanceColor) pineFoliageLowRef.current.instanceColor.needsUpdate = true
     }
 
     // 2. Broadleaf Trees
@@ -267,7 +287,14 @@ export default function Vegetation() {
           roughness={0.72}
           metalness={0.04}
           flatShading={false}
+          vertexColors
         />
+      </instancedMesh>
+      <instancedMesh ref={pineFoliageMidRef} args={[geometries.pineFoliage, null, pineList.length]} castShadow>
+        <meshStandardMaterial color="#2e7045" roughness={0.78} flatShading={false} vertexColors />
+      </instancedMesh>
+      <instancedMesh ref={pineFoliageLowRef} args={[geometries.pineFoliage, null, pineList.length]} castShadow>
+        <meshStandardMaterial color="#3c7d4d" roughness={0.82} flatShading={false} vertexColors />
       </instancedMesh>
 
       {/* 2. Dense Canopy Broadleaf Trees */}

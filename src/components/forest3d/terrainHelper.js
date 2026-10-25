@@ -205,6 +205,8 @@ export function getTerrainElevation(x, z) {
     Math.cos(z * 0.05) * 1.6 +
     Math.sin(x * 0.12 + z * 0.09) * 0.8 +
     Math.cos(x * 0.08 - z * 0.11) * 0.6 +
+    Math.sin(x * 0.22 - z * 0.19) * 0.28 +
+    Math.cos(x * 0.31 + z * 0.24) * 0.16 +
     3.5 // Base ground level
 
   // 2. North Canopy Mountain Range (Zone 1: x < 0, z < 0)
