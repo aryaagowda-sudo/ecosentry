@@ -71,7 +71,7 @@ export default function Vegetation() {
     }
 
     // Keep a readable canopy so the terrain, river, zone labels, and sensor network stay visible.
-    const targetCount = 430
+    const targetCount = 500
     let attempts = 0
 
     while ((pines.length + broadleafs.length + riverTrees.length + shrubs.length) < targetCount && attempts < 1800) {
@@ -210,10 +210,10 @@ export default function Vegetation() {
   const geometries = useMemo(() => {
     return {
       trunk: new THREE.CylinderGeometry(0.18, 0.28, 2.2, 5),
-      pineFoliage: new THREE.ConeGeometry(1.4, 3.4, 7),
-      broadleafFoliage: new THREE.IcosahedronGeometry(1.65, 1),
-      riverFoliage: new THREE.IcosahedronGeometry(1.4, 1),
-      shrubFoliage: new THREE.SphereGeometry(1.1, 8, 6)
+      pineFoliage: new THREE.ConeGeometry(1.35, 3.6, 10),
+      broadleafFoliage: new THREE.SphereGeometry(1.7, 12, 8),
+      riverFoliage: new THREE.SphereGeometry(1.45, 12, 8),
+      shrubFoliage: new THREE.SphereGeometry(1.15, 12, 8)
     }
   }, [])
 
@@ -257,7 +257,7 @@ export default function Vegetation() {
           color="#2b6842" // Rich emerald rainforest canopy
           roughness={0.76}
           metalness={0.06}
-          flatShading
+          flatShading={false}
         />
       </instancedMesh>
 

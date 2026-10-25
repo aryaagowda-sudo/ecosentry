@@ -55,11 +55,11 @@ function CameraController({ cameraTarget, isTopDown, cameraAction }) {
       // Default elevated 45° isometric viewpoint matching Reference Image 2
       // Camera at [-14, 118, 108] looking at [0, 1.5, -4] gives exact 45° downward pitch,
       // displaying Zone 1 at top-left, Zone 2 at top-right, Zone 3 at bottom-left, Zone 4 at bottom-right,
-      // with both the front and side cutaway sedimentary rock strata layers fully showcased.
-      camera.position.set(-16, 104, 116)
-      camera.lookAt(0, 1.8, -2)
+      // Keep the full raised slab visible while exposing the front and side strata layers.
+      camera.position.set(-18, 82, 122)
+      camera.lookAt(0, 0.5, -2)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 1.8, -2)
+        controlsRef.current.target.set(0, 0.5, -2)
         controlsRef.current.update()
       }
     }
@@ -78,9 +78,9 @@ function CameraController({ cameraTarget, isTopDown, cameraAction }) {
       camera.position.copy(target).add(offset.multiplyScalar(1.24))
       controlsRef.current.update()
     } else if (cameraAction.type === 'reset') {
-      camera.position.set(-16, 104, 116)
-      camera.lookAt(0, 1.8, -2)
-      controlsRef.current.target.set(0, 1.8, -2)
+      camera.position.set(-18, 82, 122)
+      camera.lookAt(0, 0.5, -2)
+      controlsRef.current.target.set(0, 0.5, -2)
       controlsRef.current.update()
     }
   }, [cameraAction, camera])
@@ -206,7 +206,7 @@ export default function ForestCanvas({
           style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}
         />
         {portalReady && <Canvas
-          camera={{ position: [-16, 104, 116], fov: 46, near: 0.5, far: 500 }}
+          camera={{ position: [-18, 82, 122], fov: 44, near: 0.5, far: 500 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
