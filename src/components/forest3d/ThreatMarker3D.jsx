@@ -4,7 +4,7 @@ import { Html } from '@react-three/drei'
 import { ShieldAlert, Volume2, Flame, User, Footprints, AlertTriangle } from 'lucide-react'
 import { gridToWorld, getSensorDisplayTag } from './terrainHelper'
 
-export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
+export default function ThreatMarker3D({ event, onSelectEvent, isSelected, portal }) {
   const ringRef = useRef()
   const [hovered, setHovered] = useState(false)
   
@@ -98,6 +98,7 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
 
       {/* 3. Solid Coral-Red Pill Tag Matching Image 2 ("1 · MIC-01", "2 · MIC-04") */}
       <Html
+        portal={portal}
         position={[0, 4.2, 0]}
         center
         distanceFactor={55}

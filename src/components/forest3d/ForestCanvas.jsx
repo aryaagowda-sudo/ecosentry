@@ -191,11 +191,21 @@ export default function ForestCanvas({
 
   const showTrails = activeLayer === 'all' || activeLayer === 'wildlife'
   const showTrees = activeLayer !== 'threats'
+  const htmlPortalRef = useRef(null)
+  const [portalReady, setPortalReady] = useState(false)
 
   return (
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <Canvas
+        <div
+          ref={(node) => {
+            htmlPortalRef.current = node
+            if (node && !portalReady) setPortalReady(true)
+          }}
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}
+        />
+        {portalReady && <Canvas
           camera={{ position: [-16, 104, 116], fov: 46, near: 0.5, far: 500 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
@@ -233,7 +243,7 @@ export default function ForestCanvas({
           {/* 3D Forest World */}
           <group>
             {/* 1. Procedural Undulating Terrain with River & Zone Borders */}
-            <Terrain selectedZone={selectedZone} />
+            <Terrain selectedZone={selectedZone} portal={htmlPortalRef} />
 
             {/* 2. Optimized Instanced Trees */}
             {showTrees && <Vegetation />}
@@ -248,6 +258,7 @@ export default function ForestCanvas({
                 sensor={sensor}
                 isSelected={sensor.id === selectedMarkerId}
                 onSelectSensor={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
 
@@ -258,6 +269,7 @@ export default function ForestCanvas({
                 event={evt}
                 isSelected={evt.id === selectedMarkerId}
                 onSelectEvent={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
 
@@ -268,10 +280,11 @@ export default function ForestCanvas({
                 event={evt}
                 isSelected={evt.id === selectedMarkerId}
                 onSelectWildlife={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
           </group>
-        </Canvas>
+        </Canvas>}
       </div>
     </WebGLErrorBoundary>
   )

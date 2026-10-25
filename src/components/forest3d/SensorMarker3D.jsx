@@ -3,7 +3,7 @@ import { Html } from '@react-three/drei'
 import { Camera, Radio, AlertTriangle } from 'lucide-react'
 import { gridToWorld, getSensorDisplayTag } from './terrainHelper'
 
-export default function SensorMarker3D({ sensor, onSelectSensor, isSelected }) {
+export default function SensorMarker3D({ sensor, onSelectSensor, isSelected, portal }) {
   const [hovered, setHovered] = useState(false)
   const [worldX, worldY, worldZ] = gridToWorld(
     sensor.coordinates.x,
@@ -65,6 +65,7 @@ export default function SensorMarker3D({ sensor, onSelectSensor, isSelected }) {
 
       {/* Compact, Clean Marker Card — Elevated for unobstructed isometric view */}
       <Html
+        portal={portal}
         position={[0, 3.2, 0]}
         center
         distanceFactor={55}

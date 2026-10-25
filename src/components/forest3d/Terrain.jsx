@@ -10,7 +10,7 @@ import {
   getRiverCenterlineX
 } from './terrainHelper'
 
-export default function Terrain({ selectedZone }) {
+export default function Terrain({ selectedZone, portal }) {
   // Generate the 3D Isometric Terrain Diorama:
   // 1. Top undulating surface with realistic hills, peaks, and river canyon
   // 2. Extruded vertical rock side skirts (North, South, East, West)
@@ -485,6 +485,7 @@ export default function Terrain({ selectedZone }) {
 
       {/* 7. Clean, Minimalist White Zone Pills Matching Image 2 */}
       <Html
+          portal={portal}
         key="zone-badge-1"
         position={[-22, getTerrainElevation(-22, -26) + 4.2, -26]}
         center
@@ -498,6 +499,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-2"
         position={[26, getTerrainElevation(26, -24) + 4.2, -24]}
         center
@@ -511,6 +513,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-3"
         position={[-24, getTerrainElevation(-24, 24) + 4.2, 24]}
         center
@@ -524,6 +527,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-4"
         position={[26, getTerrainElevation(26, 24) + 4.2, 24]}
         center
