@@ -131,56 +131,56 @@ export default function Terrain({ selectedZone }) {
         </mesh>
       )}
 
-      {/* 6. Zone 3D Text Labels Floating Over Terrain */}
-      <group position={[-26, 4.2, -26]}>
+      {/* 6. Zone Ground Sector Decals - Clean GIS Ground Watermarks */}
+      <group position={[-25, 0.25, -25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
-          fontSize={2.2}
+          fontSize={1.6}
           color="#27C58A"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.8}
-          rotation={[-Math.PI / 4, 0, 0]}
+          fillOpacity={0.65}
+          letterSpacing={0.1}
         >
-          ZONE 1: NORTH CANOPY
+          SECTOR 1 • NORTH CANOPY
         </Text>
       </group>
 
-      <group position={[26, 4.2, -26]}>
+      <group position={[25, 0.25, -25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
-          fontSize={2.2}
+          fontSize={1.6}
           color="#39B8B0"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.8}
-          rotation={[-Math.PI / 4, 0, 0]}
+          fillOpacity={0.65}
+          letterSpacing={0.1}
         >
-          ZONE 2: EAST RIVER BASIN
+          SECTOR 2 • EAST RIVER BASIN
         </Text>
       </group>
 
-      <group position={[-26, 4.2, 26]}>
+      <group position={[-25, 0.25, 25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
-          fontSize={2.2}
+          fontSize={1.6}
           color="#A879E8"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.8}
-          rotation={[-Math.PI / 4, 0, 0]}
+          fillOpacity={0.65}
+          letterSpacing={0.1}
         >
-          ZONE 3: SOUTH CORRIDOR
+          SECTOR 3 • SOUTH CORRIDOR
         </Text>
       </group>
 
-      <group position={[26, 4.2, 26]}>
+      <group position={[25, 0.25, 25]} rotation={[-Math.PI / 2, 0, 0]}>
         <Text
-          fontSize={2.2}
+          fontSize={1.6}
           color="#E8AA3A"
           anchorX="center"
           anchorY="middle"
-          fillOpacity={0.8}
-          rotation={[-Math.PI / 4, 0, 0]}
+          fillOpacity={0.65}
+          letterSpacing={0.1}
         >
-          ZONE 4: WEST BUFFER ZONE
+          SECTOR 4 • WEST BUFFER
         </Text>
       </group>
     </group>

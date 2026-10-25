@@ -57,7 +57,7 @@ export default function SettingsView() {
               AI Model Classification Thresholds
             </h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div className="settings-two-col">
               <div className="settings-form-group">
                 <label>
                   Bio-Acoustic Confidence Threshold ({acousticThreshold}%)

@@ -172,14 +172,14 @@ export default function WildlifeDetectionsView({
           <table className="standard-data-table">
             <thead>
               <tr>
-                <th>Detection ID</th>
-                <th>Timestamp</th>
-                <th>Observed Species</th>
-                <th>Monitoring Sector</th>
-                <th>Sensor Unit</th>
-                <th>Model Match</th>
-                <th>Classification Type</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '120px' }}>Detection ID</th>
+                <th style={{ width: '150px' }}>Timestamp</th>
+                <th style={{ minWidth: '180px' }}>Observed Species</th>
+                <th style={{ width: '150px' }}>Monitoring Sector</th>
+                <th style={{ width: '100px' }}>Sensor Unit</th>
+                <th style={{ width: '100px' }}>Model Match</th>
+                <th style={{ width: '110px' }}>Classification</th>
+                <th style={{ width: '160px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -192,21 +192,21 @@ export default function WildlifeDetectionsView({
               ) : (
                 wildlifeEvents.map((w) => (
                   <tr key={w.id}>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span className="code-id-cell">{w.id}</span>
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>{w.timestamp}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', whiteSpace: 'nowrap' }}>{w.timestamp}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{w.title}</td>
-                    <td>{w.zoneName}</td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{w.zoneName}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-teal)' }}>
                         {w.sensorId}
                       </span>
                     </td>
-                    <td style={{ fontFamily: 'var(--font-mono)' }}>
+                    <td style={{ fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                       {w.confidence ? `${Math.round(w.confidence * 100)}%` : '95%'}
                     </td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
                       <span
                         className="status-tag"
                         style={{
@@ -218,7 +218,7 @@ export default function WildlifeDetectionsView({
                         WILDLIFE
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', gap: '4px' }}>
                         <button
                           className="btn-action-sm"

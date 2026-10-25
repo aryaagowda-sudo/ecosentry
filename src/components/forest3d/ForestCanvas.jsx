@@ -95,6 +95,7 @@ export default function ForestCanvas({
   selectedZone,
   activeLayer,
   isTopDown,
+  selectedMarkerId,
   onSelectMarker,
   onSwitchTo2D
 }) {
@@ -124,11 +125,12 @@ export default function ForestCanvas({
 
   return (
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
-      <div className="forest-3d-canvas-wrapper">
+      <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Canvas
           camera={{ position: [0, 52, 60], fov: 42, near: 0.5, far: 250 }}
           shadows
-          gl={{ antialias: true, alpha: false }}
+          gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+          resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           onCreated={({ gl, scene }) => {
             gl.setClearColor(new THREE.Color('#0B1114'))
             scene.fog = new THREE.FogExp2('#0B1114', 0.0075)
@@ -174,6 +176,7 @@ export default function ForestCanvas({
               <SensorMarker3D
                 key={sensor.id}
                 sensor={sensor}
+                isSelected={sensor.id === selectedMarkerId}
                 onSelectSensor={onSelectMarker}
               />
             ))}
@@ -183,6 +186,7 @@ export default function ForestCanvas({
               <ThreatMarker3D
                 key={evt.id}
                 event={evt}
+                isSelected={evt.id === selectedMarkerId}
                 onSelectEvent={onSelectMarker}
               />
             ))}
@@ -192,6 +196,7 @@ export default function ForestCanvas({
               <WildlifeModel3D
                 key={evt.id}
                 event={evt}
+                isSelected={evt.id === selectedMarkerId}
                 onSelectWildlife={onSelectMarker}
               />
             ))}

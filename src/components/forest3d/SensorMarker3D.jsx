@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Html } from '@react-three/drei'
 import { Camera, Radio, AlertTriangle } from 'lucide-react'
 import { gridToWorld } from './terrainHelper'
 
-export default function SensorMarker3D({ sensor, onSelectSensor }) {
+export default function SensorMarker3D({ sensor, onSelectSensor, isSelected }) {
+  const [hovered, setHovered] = useState(false)
   const [worldX, worldY, worldZ] = gridToWorld(
     sensor.coordinates.x,
     sensor.coordinates.y
@@ -11,9 +12,10 @@ export default function SensorMarker3D({ sensor, onSelectSensor }) {
 
   const isOnline = sensor.status === 'online'
   const isCamera = sensor.type === 'camera'
+  const activeHighlight = hovered || isSelected
 
-  // Visual Theme
-  const accentColor = isOnline ? (isCamera ? '#06b6d4' : '#10b981') : '#64746b'
+  // Compact sensor code
+  const shortId = sensor.id.replace('CAM-', 'C-').replace('AC-', 'A-')
 
   return (
     <group position={[worldX, worldY, worldZ]}>
@@ -52,32 +54,54 @@ export default function SensorMarker3D({ sensor, onSelectSensor }) {
         </group>
       )}
 
-      {/* Floating 3D Interactive Tag / Billboard */}
+      {/* Ground Footprint Ring for Selection */}
+      {activeHighlight && (
+        <mesh position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.8, 1.1, 16]} />
+          <meshBasicMaterial
+            color={isCamera ? '#39B8B0' : '#27C58A'}
+            transparent
+            opacity={0.6}
+            side={2}
+          />
+        </mesh>
+      )}
+
+      {/* Floating 3D Interactive Tag / Billboard - Prioritized & Compact */}
       <Html
-        position={[0, 2.9, 0]}
+        position={[0, 2.5, 0]}
         center
-        distanceFactor={45}
-        zIndexRange={[100, 0]}
+        distanceFactor={50}
+        zIndexRange={[140, 60]}
       >
         <div
-          className={`marker-3d-tag sensor ${isOnline ? (isCamera ? 'camera' : 'acoustic') : 'offline'}`}
+          className={`marker-3d-pin sensor ${isCamera ? 'camera' : 'acoustic'} ${!isOnline ? 'offline' : ''} ${activeHighlight ? 'expanded' : 'compact'}`}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           onClick={(e) => {
             e.stopPropagation()
             onSelectSensor({ itemType: 'sensor', data: sensor })
           }}
-          title={`Click to view ${sensor.id} details`}
+          title={`${sensor.name} (${sensor.id}) • Click to inspect`}
         >
-          <div className="tag-icon">
+          <div className="pin-icon-wrap">
             {!isOnline ? (
-              <AlertTriangle size={12} color="#f87171" />
+              <AlertTriangle size={11} style={{ color: 'var(--accent-red)' }} />
             ) : isCamera ? (
-              <Camera size={12} color="#38bdf8" />
+              <Camera size={11} style={{ color: 'var(--accent-teal)' }} />
             ) : (
-              <Radio size={12} color="#34d399" />
+              <Radio size={11} style={{ color: 'var(--accent-green)' }} />
             )}
           </div>
-          <span className="tag-label">{sensor.id}</span>
-          {!isOnline && <span className="tag-status-flag">OFFLINE</span>}
+
+          {activeHighlight ? (
+            <div className="pin-expanded-content">
+              <span className="pin-title">{sensor.id}</span>
+              <span className="pin-meta">{sensor.battery}% • {sensor.status.toUpperCase()}</span>
+            </div>
+          ) : (
+            <span className="pin-label-mini">{shortId}</span>
+          )}
         </div>
       </Html>
     </group>

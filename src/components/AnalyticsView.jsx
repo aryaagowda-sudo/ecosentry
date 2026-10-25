@@ -108,7 +108,7 @@ export default function AnalyticsView({ stats, events, sensors, zones }) {
       </div>
 
       {/* Main Charts & Distribution Panels */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+      <div className="analytics-charts-grid">
         {/* Classification Distribution */}
         <div className="analytics-chart-panel">
           <div className="chart-header-row">

@@ -188,16 +188,16 @@ export default function IncidentHistoryTable({
         <table className="standard-data-table">
           <thead>
             <tr>
-              <th>Event ID</th>
-              <th>Timestamp</th>
-              <th>Classification & Title</th>
-              <th>Category</th>
-              <th>Sector Zone</th>
-              <th>Sensor Node</th>
-              <th>AI Confidence</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+              <th style={{ width: '120px' }}>Event ID</th>
+              <th style={{ width: '150px' }}>Timestamp</th>
+              <th style={{ minWidth: '220px' }}>Classification & Title</th>
+              <th style={{ width: '100px' }}>Category</th>
+              <th style={{ width: '140px' }}>Sector Zone</th>
+              <th style={{ width: '100px' }}>Sensor Node</th>
+              <th style={{ width: '100px' }}>Confidence</th>
+              <th style={{ width: '90px' }}>Priority</th>
+              <th style={{ width: '100px' }}>Status</th>
+              <th style={{ width: '160px', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -212,7 +212,7 @@ export default function IncidentHistoryTable({
             ) : (
               filteredEvents.map((evt) => (
                 <tr key={evt.id}>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span className="code-id-cell">{evt.id}</span>
                   </td>
                   <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', whiteSpace: 'nowrap' }}>
@@ -226,7 +226,7 @@ export default function IncidentHistoryTable({
                       </span>
                     </div>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span
                       style={{
                         textTransform: 'uppercase',
@@ -244,7 +244,7 @@ export default function IncidentHistoryTable({
                     </span>
                   </td>
                   <td style={{ whiteSpace: 'nowrap' }}>{evt.zoneName}</td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span
                       style={{
                         fontFamily: 'var(--font-mono)',
@@ -255,13 +255,13 @@ export default function IncidentHistoryTable({
                       {evt.sensorId}
                     </span>
                   </td>
-                  <td style={{ fontFamily: 'var(--font-mono)' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                     {evt.confidence !== null ? `${Math.round(evt.confidence * 100)}%` : '—'}
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span className={`status-tag ${evt.priority}`}>{evt.priority}</span>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span className={`status-tag ${evt.status}`}>{evt.status}</span>
                   </td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>

@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Html } from '@react-three/drei'
 import { Activity } from 'lucide-react'
 import { gridToWorld } from './terrainHelper'
 
-export default function WildlifeModel3D({ event, onSelectWildlife }) {
+export default function WildlifeModel3D({ event, onSelectWildlife, isSelected }) {
+  const [hovered, setHovered] = useState(false)
+  const activeHighlight = hovered || isSelected
   const [worldX, worldY, worldZ] = gridToWorld(
     event.coordinates.x,
     event.coordinates.y
@@ -186,26 +188,37 @@ export default function WildlifeModel3D({ event, onSelectWildlife }) {
 
       {/* Floating 3D Interactive Wildlife Tag */}
       <Html
-        position={[0, 3.4, 0]}
+        position={[0, 3.2, 0]}
         center
-        distanceFactor={45}
-        zIndexRange={[100, 0]}
+        distanceFactor={50}
+        zIndexRange={[180, 80]}
       >
         <div
-          className="marker-3d-tag wildlife"
+          className={`marker-3d-pin wildlife ${activeHighlight ? 'expanded' : 'compact'}`}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
           onClick={(e) => {
             e.stopPropagation()
             onSelectWildlife({ itemType: 'event', data: event })
           }}
-          title={`Click to view ${event.title}`}
+          title={`${event.title} • Click to inspect`}
         >
-          <div className="tag-icon">
-            <Activity size={12} color="#c084fc" />
+          <div className="pin-icon-wrap">
+            <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
           </div>
-          <span className="tag-label">{event.title.split('(')[0].trim()}</span>
-          <span className="tag-conf" style={{ color: '#c084fc' }}>
-            {Math.round((event.confidence || 0) * 100)}%
-          </span>
+
+          {activeHighlight ? (
+            <div className="pin-expanded-content">
+              <span className="pin-title">{event.title.split('(')[0].trim()}</span>
+              <span className="pin-meta" style={{ color: 'var(--accent-purple)' }}>
+                {Math.round((event.confidence || 0) * 100)}% match
+              </span>
+            </div>
+          ) : (
+            <span className="pin-label-mini">
+              {event.title.includes('Elephant') ? 'Ele' : event.title.includes('Tiger') ? 'Tig' : 'Deer'}
+            </span>
+          )}
         </div>
       </Html>
     </group>

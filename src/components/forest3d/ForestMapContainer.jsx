@@ -24,7 +24,9 @@ export default function ForestMapContainer({
   events,
   selectedZone,
   setSelectedZone,
-  onSelectMarker
+  selectedItem,
+  onSelectMarker,
+  isDedicatedPage = false
 }) {
   // View mode: '3d' (default) or '2d' (tactical fallback)
   const [viewMode, setViewMode] = useState('3d')
@@ -41,13 +43,15 @@ export default function ForestMapContainer({
     setSelectedZone('all')
   }
 
+  const selectedMarkerId = selectedItem?.data?.id
+
   return (
-    <div className="surveillance-map-card">
+    <div className={`surveillance-map-card ${isDedicatedPage ? 'dedicated-map-mode' : ''}`}>
       {/* Map Header Toolbar with Controls */}
       <div className="map-card-toolbar">
         <div className="map-toolbar-left">
           <div className="map-card-title">
-            <Compass size={16} style={{ color: 'var(--accent-green)' }} />
+            <Compass size={15} style={{ color: 'var(--accent-green)' }} />
             <span>3D Forest Surveillance Grid</span>
           </div>
           <span className="sim-spec-pill">
@@ -115,6 +119,41 @@ export default function ForestMapContainer({
         </div>
       </div>
 
+      {/* Dedicated Sector Selector Strip for the dedicated 3D Forest Map page */}
+      {isDedicatedPage && (
+        <div className="dedicated-sector-strip">
+          <span className="strip-label">Sector Focus:</span>
+          <button
+            className={`sector-strip-btn ${selectedZone === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedZone('all')}
+          >
+            All Sectors (Overview)
+          </button>
+          {zones.map((z) => (
+            <button
+              key={z.id}
+              className={`sector-strip-btn ${selectedZone === z.id ? 'active' : ''}`}
+              onClick={() => setSelectedZone(z.id)}
+            >
+              <span
+                className="sector-dot"
+                style={{
+                  backgroundColor:
+                    z.id === 'zone-1'
+                      ? 'var(--accent-green)'
+                      : z.id === 'zone-2'
+                      ? 'var(--accent-teal)'
+                      : z.id === 'zone-3'
+                      ? 'var(--accent-purple)'
+                      : 'var(--accent-amber)'
+                }}
+              />
+              <span>{z.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* VIEWPORT: 3D Canvas or 2D Tactical View */}
       {viewMode === '3d' ? (
         <div className="map-canvas-container">
@@ -128,30 +167,33 @@ export default function ForestMapContainer({
               selectedZone={selectedZone}
               activeLayer={activeLayer}
               isTopDown={isTopDown}
+              selectedMarkerId={selectedMarkerId}
               onSelectMarker={onSelectMarker}
               onSwitchTo2D={() => setViewMode('2d')}
             />
           </div>
 
-          {/* HUD Sector Selector (top-left over 3D canvas) */}
-          <div className="hud-zone-selector">
-            <span className="hud-zone-label">Sector:</span>
-            <button
-              className={`hud-zone-btn ${selectedZone === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedZone('all')}
-            >
-              All
-            </button>
-            {zones.map((z) => (
+          {/* HUD Sector Selector (shown on overview mode when dedicated strip is absent) */}
+          {!isDedicatedPage && (
+            <div className="hud-zone-selector">
+              <span className="hud-zone-label">Sector:</span>
               <button
-                key={z.id}
-                className={`hud-zone-btn ${selectedZone === z.id ? 'active' : ''}`}
-                onClick={() => setSelectedZone(z.id)}
+                className={`hud-zone-btn ${selectedZone === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedZone('all')}
               >
-                {z.code}
+                All
               </button>
-            ))}
-          </div>
+              {zones.map((z) => (
+                <button
+                  key={z.id}
+                  className={`hud-zone-btn ${selectedZone === z.id ? 'active' : ''}`}
+                  onClick={() => setSelectedZone(z.id)}
+                >
+                  {z.code}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* HUD 3D Camera Controls (top-right over 3D canvas) */}
           <div className="hud-camera-actions">

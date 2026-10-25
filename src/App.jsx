@@ -184,6 +184,7 @@ export default function App() {
                   events={events}
                   selectedZone={selectedZone}
                   setSelectedZone={setSelectedZone}
+                  selectedItem={selectedItem}
                   onSelectMarker={handleSelectMarker}
                 />
 
@@ -212,7 +213,7 @@ export default function App() {
 
           {/* TAB: 3D FOREST MAP (Expanded View) */}
           {activeNav === 'map' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0 }}>
               <ForestMapContainer
                 zones={SIMULATED_ZONES}
                 trails={ANIMAL_TRAILS}
@@ -220,16 +221,9 @@ export default function App() {
                 events={events}
                 selectedZone={selectedZone}
                 setSelectedZone={setSelectedZone}
+                selectedItem={selectedItem}
                 onSelectMarker={handleSelectMarker}
-              />
-
-              <ThreatAlertsPanel
-                events={events}
-                zones={SIMULATED_ZONES}
-                onAcknowledge={handleAcknowledge}
-                onResolve={handleResolve}
-                onInspectEvent={handleInspectEvent}
-                onViewOnMap={handleViewOnMap}
+                isDedicatedPage={true}
               />
             </div>
           )}

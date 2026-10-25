@@ -110,14 +110,14 @@ export default function SensorManagementView({
         <table className="standard-data-table">
           <thead>
             <tr>
-              <th>Sensor ID</th>
-              <th>Hardware Type & Model</th>
-              <th>Sector Location</th>
-              <th>Simulated Coordinates</th>
-              <th>Power & Battery</th>
-              <th>Signal & Last Heartbeat</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right' }}>Hardware Simulation</th>
+              <th style={{ width: '120px' }}>Sensor ID</th>
+              <th style={{ minWidth: '200px' }}>Hardware Type & Model</th>
+              <th style={{ width: '150px' }}>Sector Location</th>
+              <th style={{ width: '160px' }}>Simulated Coordinates</th>
+              <th style={{ width: '140px' }}>Power & Battery</th>
+              <th style={{ width: '150px' }}>Signal & Heartbeat</th>
+              <th style={{ width: '100px' }}>Status</th>
+              <th style={{ width: '180px', textAlign: 'right' }}>Simulation Control</th>
             </tr>
           </thead>
           <tbody>
@@ -127,7 +127,7 @@ export default function SensorManagementView({
 
               return (
                 <tr key={sensor.id}>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="code-id-cell">{sensor.id}</span>
                       {isCamera ? (
@@ -148,10 +148,10 @@ export default function SensorManagementView({
                     </div>
                   </td>
                   <td style={{ whiteSpace: 'nowrap' }}>{sensor.zoneName}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', whiteSpace: 'nowrap' }}>
                     {sensor.coordinates.simulatedLat}°N, {sensor.coordinates.simulatedLng}°E
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {sensor.solarCharging ? (
                         <BatteryCharging size={13} style={{ color: 'var(--accent-green)' }} />
@@ -171,7 +171,7 @@ export default function SensorManagementView({
                       )}
                     </div>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
                         {sensor.signalStrength}
@@ -181,7 +181,7 @@ export default function SensorManagementView({
                       </span>
                     </div>
                   </td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     <span className={`status-tag ${isOnline ? 'online' : 'offline'}`}>
                       {isOnline ? 'ONLINE' : 'OFFLINE'}
                     </span>
