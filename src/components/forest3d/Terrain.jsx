@@ -36,6 +36,8 @@ export default function Terrain({ selectedZone }) {
       const distFromRiver = Math.abs(x - riverX)
 
       const color = new THREE.Color()
+      const moisture = Math.max(0, 1 - distFromRiver / 12)
+      const elevationShade = THREE.MathUtils.clamp((y - 2.5) / 12, 0, 1)
 
       if (distFromRiver < 4.2) {
         // Riverbed & wet shoreline: dark pebble & moist earth
@@ -53,10 +55,10 @@ export default function Terrain({ selectedZone }) {
         // Forest terrain: rich natural canopy greens with zone-specific nuances
         if (x <= 0 && z <= 0) {
           // Zone 1: Dense North Canopy (rich dark emerald forest)
-          color.setRGB(0.12 + (y * 0.008), 0.32 + (y * 0.012), 0.16 + (y * 0.006))
+          color.setRGB(0.14 + elevationShade * 0.045, 0.32 + elevationShade * 0.075, 0.17 + elevationShade * 0.035)
         } else if (x > 0 && z <= 0) {
           // Zone 2: East River Basin (wetland & delta green)
-          color.setRGB(0.14 + (y * 0.008), 0.34 + (y * 0.010), 0.20 + (y * 0.008))
+          color.setRGB(0.16 + moisture * 0.025, 0.35 + moisture * 0.06, 0.21 + moisture * 0.045)
         } else if (x <= 0 && z > 0) {
           // Zone 3: South Wildlife Corridor (deep migration forest)
           color.setRGB(0.13 + (y * 0.008), 0.30 + (y * 0.011), 0.15 + (y * 0.006))
@@ -420,9 +422,10 @@ export default function Terrain({ selectedZone }) {
       <mesh geometry={skirtGeometry} receiveShadow>
         <meshStandardMaterial
           map={rockStrataTexture}
-          roughness={0.88}
-          metalness={0.08}
+          roughness={0.94}
+          metalness={0.02}
           flatShading={false}
+          color="#a58f78"
         />
       </mesh>
 
@@ -435,11 +438,11 @@ export default function Terrain({ selectedZone }) {
       <mesh geometry={riverGeometry} receiveShadow>
         <meshStandardMaterial
           map={waterTexture}
-          color="#268fa8"
-          roughness={0.16}
-          metalness={0.32}
+          color="#2f8090"
+          roughness={0.24}
+          metalness={0.14}
           transparent
-          opacity={0.94}
+          opacity={0.9}
           side={THREE.DoubleSide}
         />
       </mesh>

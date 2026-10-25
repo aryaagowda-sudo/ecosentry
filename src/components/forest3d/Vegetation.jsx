@@ -142,12 +142,13 @@ export default function Vegetation() {
         // Trunk
         dummy.position.set(tree.x, tree.y + 1.2 * tree.scale, tree.z)
         dummy.rotation.set(0, tree.rot, 0)
-        dummy.scale.set(tree.scale, tree.scale, tree.scale)
+        dummy.scale.set(tree.scale * 0.9, tree.scale * 1.08, tree.scale * 0.9)
         dummy.updateMatrix()
         pineTrunkRef.current.setMatrixAt(i, dummy.matrix)
 
         // Foliage
         dummy.position.set(tree.x, tree.y + 2.8 * tree.scale, tree.z)
+        dummy.scale.set(tree.scale * 1.04, tree.scale * 1.12, tree.scale * 1.04)
         dummy.updateMatrix()
         pineFoliageRef.current.setMatrixAt(i, dummy.matrix)
       })
@@ -161,12 +162,13 @@ export default function Vegetation() {
         // Trunk
         dummy.position.set(tree.x, tree.y + 1.1 * tree.scale, tree.z)
         dummy.rotation.set(0, tree.rot, 0)
-        dummy.scale.set(tree.scale, tree.scale, tree.scale)
+        dummy.scale.set(tree.scale * 0.92, tree.scale * 1.05, tree.scale * 0.92)
         dummy.updateMatrix()
         broadleafTrunkRef.current.setMatrixAt(i, dummy.matrix)
 
         // Foliage
         dummy.position.set(tree.x, tree.y + 2.5 * tree.scale, tree.z)
+        dummy.scale.set(tree.scale * 1.12, tree.scale * 0.92, tree.scale * 1.12)
         dummy.updateMatrix()
         broadleafFoliageRef.current.setMatrixAt(i, dummy.matrix)
       })
@@ -208,10 +210,10 @@ export default function Vegetation() {
   const geometries = useMemo(() => {
     return {
       trunk: new THREE.CylinderGeometry(0.18, 0.28, 2.2, 5),
-      pineFoliage: new THREE.ConeGeometry(1.4, 3.4, 5),
-      broadleafFoliage: new THREE.DodecahedronGeometry(1.65, 1),
-      riverFoliage: new THREE.DodecahedronGeometry(1.4, 1),
-      shrubFoliage: new THREE.SphereGeometry(1.1, 5, 4)
+      pineFoliage: new THREE.ConeGeometry(1.4, 3.4, 7),
+      broadleafFoliage: new THREE.IcosahedronGeometry(1.65, 1),
+      riverFoliage: new THREE.IcosahedronGeometry(1.4, 1),
+      shrubFoliage: new THREE.SphereGeometry(1.1, 8, 6)
     }
   }, [])
 
@@ -234,7 +236,7 @@ export default function Vegetation() {
           color="#1c5134" // Deep pine conifer green
           roughness={0.72}
           metalness={0.04}
-          flatShading
+          flatShading={false}
         />
       </instancedMesh>
 

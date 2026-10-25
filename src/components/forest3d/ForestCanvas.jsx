@@ -196,7 +196,7 @@ export default function ForestCanvas({
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Canvas
-          camera={{ position: [-16, 104, 116], fov: 42, near: 0.5, far: 500 }}
+          camera={{ position: [-16, 104, 116], fov: 46, near: 0.5, far: 500 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
