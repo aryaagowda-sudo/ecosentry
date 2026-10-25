@@ -14,8 +14,11 @@ export default function Vegetation() {
   const pineFoliageRef = useRef()
   const broadleafTrunkRef = useRef()
   const broadleafFoliageRef = useRef()
+  const broadleafFoliageMidRef = useRef()
+  const broadleafFoliageLowRef = useRef()
   const riverTreeTrunkRef = useRef()
   const riverTreeFoliageRef = useRef()
+  const riverTreeFoliageMidRef = useRef()
   const shrubRef = useRef()
 
   // Pre-calculate sensor, threat, and trail clearing zones so markers remain unobstructed
@@ -151,13 +154,15 @@ export default function Vegetation() {
         dummy.scale.set(tree.scale * 1.04, tree.scale * 1.12, tree.scale * 1.04)
         dummy.updateMatrix()
         pineFoliageRef.current.setMatrixAt(i, dummy.matrix)
+        pineFoliageRef.current.setColorAt(i, new THREE.Color().setHSL(0.34 + (i % 5) * 0.006, 0.38, 0.22 + (i % 4) * 0.018))
       })
       pineTrunkRef.current.instanceMatrix.needsUpdate = true
       pineFoliageRef.current.instanceMatrix.needsUpdate = true
+      if (pineFoliageRef.current.instanceColor) pineFoliageRef.current.instanceColor.needsUpdate = true
     }
 
     // 2. Broadleaf Trees
-    if (broadleafTrunkRef.current && broadleafFoliageRef.current) {
+    if (broadleafTrunkRef.current && broadleafFoliageRef.current && broadleafFoliageMidRef.current && broadleafFoliageLowRef.current) {
       broadleafList.forEach((tree, i) => {
         // Trunk
         dummy.position.set(tree.x, tree.y + 1.1 * tree.scale, tree.z)
@@ -166,18 +171,36 @@ export default function Vegetation() {
         dummy.updateMatrix()
         broadleafTrunkRef.current.setMatrixAt(i, dummy.matrix)
 
-        // Foliage
-        dummy.position.set(tree.x, tree.y + 2.5 * tree.scale, tree.z)
-        dummy.scale.set(tree.scale * 1.12, tree.scale * 0.92, tree.scale * 1.12)
+        // Three offset crown clusters create irregular, layered broadleaf silhouettes.
+        dummy.position.set(tree.x - 0.42 * tree.scale, tree.y + 2.35 * tree.scale, tree.z + 0.14 * tree.scale)
+        dummy.scale.set(tree.scale * 0.84, tree.scale * 0.74, tree.scale * 0.9)
         dummy.updateMatrix()
         broadleafFoliageRef.current.setMatrixAt(i, dummy.matrix)
+
+        dummy.position.set(tree.x + 0.48 * tree.scale, tree.y + 2.58 * tree.scale, tree.z - 0.18 * tree.scale)
+        dummy.scale.set(tree.scale * 0.78, tree.scale * 0.68, tree.scale * 0.82)
+        dummy.updateMatrix()
+        broadleafFoliageMidRef.current.setMatrixAt(i, dummy.matrix)
+
+        dummy.position.set(tree.x + 0.02 * tree.scale, tree.y + 3.02 * tree.scale, tree.z + 0.04 * tree.scale)
+        dummy.scale.set(tree.scale * 0.62, tree.scale * 0.58, tree.scale * 0.66)
+        dummy.updateMatrix()
+        broadleafFoliageLowRef.current.setMatrixAt(i, dummy.matrix)
+        broadleafFoliageRef.current.setColorAt(i, new THREE.Color().setHSL(0.30 + (i % 7) * 0.008, 0.34, 0.27 + (i % 4) * 0.018))
+        broadleafFoliageMidRef.current.setColorAt(i, new THREE.Color().setHSL(0.32 + (i % 6) * 0.008, 0.30, 0.34 + (i % 3) * 0.02))
+        broadleafFoliageLowRef.current.setColorAt(i, new THREE.Color().setHSL(0.31 + (i % 5) * 0.007, 0.38, 0.22 + (i % 3) * 0.016))
       })
       broadleafTrunkRef.current.instanceMatrix.needsUpdate = true
       broadleafFoliageRef.current.instanceMatrix.needsUpdate = true
+      broadleafFoliageMidRef.current.instanceMatrix.needsUpdate = true
+      broadleafFoliageLowRef.current.instanceMatrix.needsUpdate = true
+      if (broadleafFoliageRef.current.instanceColor) broadleafFoliageRef.current.instanceColor.needsUpdate = true
+      if (broadleafFoliageMidRef.current.instanceColor) broadleafFoliageMidRef.current.instanceColor.needsUpdate = true
+      if (broadleafFoliageLowRef.current.instanceColor) broadleafFoliageLowRef.current.instanceColor.needsUpdate = true
     }
 
     // 3. River Trees
-    if (riverTreeTrunkRef.current && riverTreeFoliageRef.current) {
+    if (riverTreeTrunkRef.current && riverTreeFoliageRef.current && riverTreeFoliageMidRef.current) {
       riverTreeList.forEach((tree, i) => {
         dummy.position.set(tree.x, tree.y + 0.9 * tree.scale, tree.z)
         dummy.rotation.set(0, tree.rot, 0)
@@ -185,12 +208,19 @@ export default function Vegetation() {
         dummy.updateMatrix()
         riverTreeTrunkRef.current.setMatrixAt(i, dummy.matrix)
 
-        dummy.position.set(tree.x, tree.y + 2.1 * tree.scale, tree.z)
+        dummy.position.set(tree.x - 0.34 * tree.scale, tree.y + 1.95 * tree.scale, tree.z)
+        dummy.scale.set(tree.scale * 0.92, tree.scale * 0.8, tree.scale * 0.96)
         dummy.updateMatrix()
         riverTreeFoliageRef.current.setMatrixAt(i, dummy.matrix)
+
+        dummy.position.set(tree.x + 0.44 * tree.scale, tree.y + 2.2 * tree.scale, tree.z + 0.16 * tree.scale)
+        dummy.scale.set(tree.scale * 0.7, tree.scale * 0.62, tree.scale * 0.76)
+        dummy.updateMatrix()
+        riverTreeFoliageMidRef.current.setMatrixAt(i, dummy.matrix)
       })
       riverTreeTrunkRef.current.instanceMatrix.needsUpdate = true
       riverTreeFoliageRef.current.instanceMatrix.needsUpdate = true
+      riverTreeFoliageMidRef.current.instanceMatrix.needsUpdate = true
     }
 
     // 4. Shrubs / Understory
@@ -260,6 +290,12 @@ export default function Vegetation() {
           flatShading={false}
         />
       </instancedMesh>
+      <instancedMesh ref={broadleafFoliageMidRef} args={[geometries.broadleafFoliage, null, broadleafList.length]} castShadow>
+        <meshStandardMaterial color="#3f7b4c" roughness={0.82} flatShading={false} />
+      </instancedMesh>
+      <instancedMesh ref={broadleafFoliageLowRef} args={[geometries.broadleafFoliage, null, broadleafList.length]} castShadow>
+        <meshStandardMaterial color="#255b38" roughness={0.86} flatShading={false} />
+      </instancedMesh>
 
       {/* 3. Riparian Riverbank Trees */}
       <instancedMesh
@@ -280,6 +316,9 @@ export default function Vegetation() {
           metalness={0.05}
           flatShading
         />
+      </instancedMesh>
+      <instancedMesh ref={riverTreeFoliageMidRef} args={[geometries.riverFoliage, null, riverTreeList.length]} castShadow>
+        <meshStandardMaterial color="#4d8752" roughness={0.8} flatShading={false} />
       </instancedMesh>
 
       {/* 4. Understory Shrubs & Bush Clusters */}

@@ -38,6 +38,7 @@ export default function Terrain({ selectedZone, portal }) {
       const color = new THREE.Color()
       const moisture = Math.max(0, 1 - distFromRiver / 12)
       const elevationShade = THREE.MathUtils.clamp((y - 2.5) / 12, 0, 1)
+      const floorVariation = (Math.sin(x * 0.31 + z * 0.17) + Math.cos(x * 0.13 - z * 0.27)) * 0.012
 
       if (distFromRiver < 4.2) {
         // Riverbed & wet shoreline: dark pebble & moist earth
@@ -55,10 +56,10 @@ export default function Terrain({ selectedZone, portal }) {
         // Forest terrain: rich natural canopy greens with zone-specific nuances
         if (x <= 0 && z <= 0) {
           // Zone 1: Dense North Canopy (rich dark emerald forest)
-          color.setRGB(0.14 + elevationShade * 0.045, 0.32 + elevationShade * 0.075, 0.17 + elevationShade * 0.035)
+          color.setRGB(0.14 + elevationShade * 0.045 + floorVariation, 0.32 + elevationShade * 0.075 + floorVariation, 0.17 + elevationShade * 0.035 + floorVariation * 0.5)
         } else if (x > 0 && z <= 0) {
           // Zone 2: East River Basin (wetland & delta green)
-          color.setRGB(0.16 + moisture * 0.025, 0.35 + moisture * 0.06, 0.21 + moisture * 0.045)
+          color.setRGB(0.16 + moisture * 0.025 + floorVariation, 0.35 + moisture * 0.06 + floorVariation, 0.21 + moisture * 0.045 + floorVariation * 0.6)
         } else if (x <= 0 && z > 0) {
           // Zone 3: South Wildlife Corridor (deep migration forest)
           color.setRGB(0.13 + (y * 0.008), 0.30 + (y * 0.011), 0.15 + (y * 0.006))
@@ -422,10 +423,10 @@ export default function Terrain({ selectedZone, portal }) {
       <mesh geometry={skirtGeometry} receiveShadow>
         <meshStandardMaterial
           map={rockStrataTexture}
-          roughness={0.94}
-          metalness={0.02}
+          roughness={0.98}
+          metalness={0.01}
           flatShading={false}
-          color="#a58f78"
+          color="#9b876f"
         />
       </mesh>
 
@@ -438,11 +439,11 @@ export default function Terrain({ selectedZone, portal }) {
       <mesh geometry={riverGeometry} receiveShadow>
         <meshStandardMaterial
           map={waterTexture}
-          color="#2f8090"
-          roughness={0.24}
-          metalness={0.14}
+          color="#3a8990"
+          roughness={0.18}
+          metalness={0.08}
           transparent
-          opacity={0.9}
+          opacity={0.86}
           side={THREE.DoubleSide}
         />
       </mesh>
