@@ -10,8 +10,8 @@ import SensorMarker3D from './SensorMarker3D'
 import ThreatMarker3D from './ThreatMarker3D'
 import WildlifeModel3D from './WildlifeModel3D'
 
-// Camera Rig Helper to animate camera to specific presets (elevated isometric, top-down, zone focus)
-function CameraController({ cameraTarget, isTopDown }) {
+// Camera Rig Helper to animate camera to specific presets (elevated isometric, top-down, zone focus, and toolbar actions)
+function CameraController({ cameraTarget, isTopDown, cameraAction }) {
   const { camera } = useThree()
   const controlsRef = useRef()
 
@@ -21,50 +21,78 @@ function CameraController({ cameraTarget, isTopDown }) {
       camera.lookAt(0, 1.5, 0)
       if (controlsRef.current) {
         controlsRef.current.target.set(0, 1.5, 0)
+        controlsRef.current.update()
       }
     } else if (cameraTarget === 'zone-1') {
-      camera.position.set(-26, 48, 16)
+      camera.position.set(-20, 68, 54)
       camera.lookAt(-25, 4, -25)
       if (controlsRef.current) {
         controlsRef.current.target.set(-25, 4, -25)
+        controlsRef.current.update()
       }
     } else if (cameraTarget === 'zone-2') {
-      camera.position.set(28, 46, 16)
+      camera.position.set(24, 68, 54)
       camera.lookAt(25, 3, -25)
       if (controlsRef.current) {
         controlsRef.current.target.set(25, 3, -25)
+        controlsRef.current.update()
       }
     } else if (cameraTarget === 'zone-3') {
-      camera.position.set(-26, 46, 64)
+      camera.position.set(-20, 68, 75)
       camera.lookAt(-25, 3, 25)
       if (controlsRef.current) {
         controlsRef.current.target.set(-25, 3, 25)
+        controlsRef.current.update()
       }
     } else if (cameraTarget === 'zone-4') {
-      camera.position.set(28, 46, 64)
+      camera.position.set(24, 68, 75)
       camera.lookAt(25, 2, 25)
       if (controlsRef.current) {
         controlsRef.current.target.set(25, 2, 25)
+        controlsRef.current.update()
       }
     } else {
-      // Default elevated, oblique isometric overview (38-42° downward pitch)
-      // Reveals entire 3D raised diorama, winding river, and all sensors simultaneously without obstruction
-      camera.position.set(64, 76, 64)
-      camera.lookAt(0, 1.5, 0)
+      // Default elevated 45° isometric viewpoint matching Reference Image 2
+      // Camera at [-14, 118, 108] looking at [0, 1.5, -4] gives exact 45° downward pitch,
+      // displaying Zone 1 at top-left, Zone 2 at top-right, Zone 3 at bottom-left, Zone 4 at bottom-right,
+      // with both the front and side cutaway sedimentary rock strata layers fully showcased.
+      camera.position.set(-14, 118, 108)
+      camera.lookAt(0, 1.5, -4)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 1.5, 0)
+        controlsRef.current.target.set(0, 1.5, -4)
+        controlsRef.current.update()
       }
     }
   }, [cameraTarget, isTopDown, camera])
 
+  // Handle external toolbar camera actions (Zoom In, Zoom Out, Reset orientation)
+  useEffect(() => {
+    if (!cameraAction || !controlsRef.current) return
+    const target = controlsRef.current.target || new THREE.Vector3(0, 1.5, -4)
+
+    if (cameraAction.type === 'zoomIn') {
+      camera.position.lerp(target, 0.22)
+      controlsRef.current.update()
+    } else if (cameraAction.type === 'zoomOut') {
+      const offset = camera.position.clone().sub(target)
+      camera.position.copy(target).add(offset.multiplyScalar(1.24))
+      controlsRef.current.update()
+    } else if (cameraAction.type === 'reset') {
+      camera.position.set(-14, 118, 108)
+      camera.lookAt(0, 1.5, -4)
+      controlsRef.current.target.set(0, 1.5, -4)
+      controlsRef.current.update()
+    }
+  }, [cameraAction, camera])
+
   return (
     <OrbitControls
       ref={controlsRef}
-      target={[0, 1.5, 0]}
+      target={[0, 1.5, -4]}
       enableDamping
       dampingFactor={0.06}
-      minDistance={22}
-      maxDistance={175}
+      minDistance={20}
+      maxDistance={180}
       maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.15}
       minPolarAngle={0.05}
     />
@@ -113,32 +141,53 @@ export default function ForestCanvas({
   sensors,
   events,
   selectedZone,
-  activeLayer,
+  activeLayer = 'all',
+  visibleLayers = { cameras: true, acoustics: true, incidents: true },
+  cameraAction,
   isTopDown,
   selectedMarkerId,
   onSelectMarker,
   onSwitchTo2D
 }) {
-  // Filter visible sensors according to active layer and selected zone
+  // Filter threat events based on layers & zone (Only unacknowledged active threats matching Image 2)
+  const threatEvents = events.filter((evt) => {
+    if (evt.category !== 'threat') return false
+    if (evt.status !== 'active') return false // Only active critical alerts get red incident pins ("1 · MIC-01", "2 · MIC-04")
+    if (selectedZone !== 'all' && evt.zoneId !== selectedZone) return false
+    if (visibleLayers && visibleLayers.incidents === false) return false
+    if (activeLayer === 'cameras' || activeLayer === 'acoustics' || activeLayer === 'wildlife') return false
+    return true
+  })
+
+  // Set of sensor IDs that currently have an active incident pin rendered.
+  // We suppress the duplicate sensor marker at the exact same location so only the coral-red incident pin shows.
+  const activeIncidentSensorIds = new Set(
+    threatEvents.filter((e) => e.sensorId).map((e) => e.sensorId)
+  )
+
+  // Filter visible sensors according to active layers, selected zone, and incident deduplication
   const visibleSensors = sensors.filter((sensor) => {
     if (selectedZone !== 'all' && sensor.zoneId !== selectedZone) return false
-    if (activeLayer === 'cameras' && sensor.type !== 'camera') return false
-    if (activeLayer === 'acoustics' && sensor.type !== 'acoustic') return false
-    if (activeLayer === 'threats' || activeLayer === 'wildlife') return false
+    if (visibleLayers) {
+      if (sensor.type === 'camera' && !visibleLayers.cameras) return false
+      if (sensor.type === 'acoustic' && !visibleLayers.acoustics) return false
+    } else {
+      if (activeLayer === 'cameras' && sensor.type !== 'camera') return false
+      if (activeLayer === 'acoustics' && sensor.type !== 'acoustic') return false
+      if (activeLayer === 'threats' || activeLayer === 'wildlife') return false
+    }
+    // Anti-collision: if this sensor already has an active threat pin, do not render a duplicate sensor pin
+    if (activeIncidentSensorIds.has(sensor.id)) return false
     return true
   })
 
-  // Filter visible events
-  const visibleEvents = events.filter((evt) => {
+  // Filter visible wildlife events (Fauna models rendered in the forest)
+  const wildlifeEvents = events.filter((evt) => {
+    if (evt.category !== 'wildlife' && evt.type !== 'animal_boundary_crossing') return false
     if (selectedZone !== 'all' && evt.zoneId !== selectedZone) return false
-    if (activeLayer === 'cameras' || activeLayer === 'acoustics') return false
-    if (activeLayer === 'wildlife' && evt.category !== 'wildlife' && evt.type !== 'animal_boundary_crossing') return false
-    if (activeLayer === 'threats' && evt.category !== 'threat') return false
+    if (activeLayer === 'cameras' || activeLayer === 'acoustics' || activeLayer === 'threats') return false
     return true
   })
-
-  const threatEvents = visibleEvents.filter((e) => e.category === 'threat')
-  const wildlifeEvents = visibleEvents.filter((e) => e.category === 'wildlife')
 
   const showTrails = activeLayer === 'all' || activeLayer === 'wildlife'
   const showTrees = activeLayer !== 'threats'
@@ -147,17 +196,17 @@ export default function ForestCanvas({
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Canvas
-          camera={{ position: [64, 76, 64], fov: 36, near: 0.5, far: 450 }}
+          camera={{ position: [-14, 118, 108], fov: 38, near: 0.5, far: 500 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           onCreated={({ gl, scene }) => {
-            gl.setClearColor(new THREE.Color('#EBF0EA'))
-            scene.fog = new THREE.FogExp2('#EBF0EA', 0.003)
+            gl.setClearColor(new THREE.Color('#CBD1CB'))
+            scene.fog = new THREE.FogExp2('#CBD1CB', 0.0022)
           }}
         >
           {/* Natural Atmospheric Daylight Lighting */}
-          <ambientLight color="#EBF3EC" intensity={1.05} />
+          <ambientLight color="#EBF3EC" intensity={1.1} />
           <directionalLight
             position={[45, 62, 38]}
             intensity={1.5}
@@ -178,6 +227,7 @@ export default function ForestCanvas({
           <CameraController
             cameraTarget={selectedZone}
             isTopDown={isTopDown}
+            cameraAction={cameraAction}
           />
 
           {/* 3D Forest World */}

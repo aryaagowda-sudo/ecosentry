@@ -72,28 +72,27 @@ export default function Terrain({ selectedZone }) {
     topGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
     topGeo.computeVertexNormals()
 
-    // 2. Build 3D Platform Skirt Walls (extruding the edges down to BASE_HEIGHT)
+    // 2. Build 3D Platform Skirt Walls (Sedimentary Rock Strata Cutaway)
     const skirtPositions = []
-    const skirtColors = []
-    const wallCol = new THREE.Color('#252b26')
-    const wallBaseCol = new THREE.Color('#1a1f1b')
+    const skirtUVs = []
 
-    const addQuad = (p1, p2, p3, p4) => {
+    const addQuad = (p1, p2, p3, p4, u0, u1) => {
       // Triangle 1: p1, p2, p3
       skirtPositions.push(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z)
+      skirtUVs.push(u0, 1.0, u1, 1.0, u1, 0.0)
+
       // Triangle 2: p1, p3, p4
       skirtPositions.push(p1.x, p1.y, p1.z, p3.x, p3.y, p3.z, p4.x, p4.y, p4.z)
-
-      for (let k = 0; k < 6; k++) {
-        skirtColors.push(wallCol.r, wallCol.g, wallCol.b)
-      }
+      skirtUVs.push(u0, 1.0, u1, 0.0, u0, 0.0)
     }
 
     const skirtSegments = 40
     // North edge: z = -HALF_SIZE, x from -HALF_SIZE to +HALF_SIZE
     for (let i = 0; i < skirtSegments; i++) {
-      const x0 = -HALF_SIZE + (i / skirtSegments) * WORLD_SIZE
-      const x1 = -HALF_SIZE + ((i + 1) / skirtSegments) * WORLD_SIZE
+      const u0 = i / skirtSegments
+      const u1 = (i + 1) / skirtSegments
+      const x0 = -HALF_SIZE + u0 * WORLD_SIZE
+      const x1 = -HALF_SIZE + u1 * WORLD_SIZE
       const y0 = getTerrainElevation(x0, -HALF_SIZE)
       const y1 = getTerrainElevation(x1, -HALF_SIZE)
 
@@ -101,14 +100,18 @@ export default function Terrain({ selectedZone }) {
         new THREE.Vector3(x0, y0, -HALF_SIZE),
         new THREE.Vector3(x1, y1, -HALF_SIZE),
         new THREE.Vector3(x1, BASE_HEIGHT, -HALF_SIZE),
-        new THREE.Vector3(x0, BASE_HEIGHT, -HALF_SIZE)
+        new THREE.Vector3(x0, BASE_HEIGHT, -HALF_SIZE),
+        u0,
+        u1
       )
     }
 
     // South edge: z = +HALF_SIZE, x from +HALF_SIZE to -HALF_SIZE
     for (let i = 0; i < skirtSegments; i++) {
-      const x0 = HALF_SIZE - (i / skirtSegments) * WORLD_SIZE
-      const x1 = HALF_SIZE - ((i + 1) / skirtSegments) * WORLD_SIZE
+      const u0 = i / skirtSegments
+      const u1 = (i + 1) / skirtSegments
+      const x0 = HALF_SIZE - u0 * WORLD_SIZE
+      const x1 = HALF_SIZE - u1 * WORLD_SIZE
       const y0 = getTerrainElevation(x0, HALF_SIZE)
       const y1 = getTerrainElevation(x1, HALF_SIZE)
 
@@ -116,14 +119,18 @@ export default function Terrain({ selectedZone }) {
         new THREE.Vector3(x0, y0, HALF_SIZE),
         new THREE.Vector3(x1, y1, HALF_SIZE),
         new THREE.Vector3(x1, BASE_HEIGHT, HALF_SIZE),
-        new THREE.Vector3(x0, BASE_HEIGHT, HALF_SIZE)
+        new THREE.Vector3(x0, BASE_HEIGHT, HALF_SIZE),
+        u0,
+        u1
       )
     }
 
     // West edge: x = -HALF_SIZE, z from +HALF_SIZE to -HALF_SIZE
     for (let i = 0; i < skirtSegments; i++) {
-      const z0 = HALF_SIZE - (i / skirtSegments) * WORLD_SIZE
-      const z1 = HALF_SIZE - ((i + 1) / skirtSegments) * WORLD_SIZE
+      const u0 = i / skirtSegments
+      const u1 = (i + 1) / skirtSegments
+      const z0 = HALF_SIZE - u0 * WORLD_SIZE
+      const z1 = HALF_SIZE - u1 * WORLD_SIZE
       const y0 = getTerrainElevation(-HALF_SIZE, z0)
       const y1 = getTerrainElevation(-HALF_SIZE, z1)
 
@@ -131,14 +138,18 @@ export default function Terrain({ selectedZone }) {
         new THREE.Vector3(-HALF_SIZE, y0, z0),
         new THREE.Vector3(-HALF_SIZE, y1, z1),
         new THREE.Vector3(-HALF_SIZE, BASE_HEIGHT, z1),
-        new THREE.Vector3(-HALF_SIZE, BASE_HEIGHT, z0)
+        new THREE.Vector3(-HALF_SIZE, BASE_HEIGHT, z0),
+        u0,
+        u1
       )
     }
 
     // East edge: x = +HALF_SIZE, z from -HALF_SIZE to +HALF_SIZE
     for (let i = 0; i < skirtSegments; i++) {
-      const z0 = -HALF_SIZE + (i / skirtSegments) * WORLD_SIZE
-      const z1 = -HALF_SIZE + ((i + 1) / skirtSegments) * WORLD_SIZE
+      const u0 = i / skirtSegments
+      const u1 = (i + 1) / skirtSegments
+      const z0 = -HALF_SIZE + u0 * WORLD_SIZE
+      const z1 = -HALF_SIZE + u1 * WORLD_SIZE
       const y0 = getTerrainElevation(HALF_SIZE, z0)
       const y1 = getTerrainElevation(HALF_SIZE, z1)
 
@@ -146,13 +157,15 @@ export default function Terrain({ selectedZone }) {
         new THREE.Vector3(HALF_SIZE, y0, z0),
         new THREE.Vector3(HALF_SIZE, y1, z1),
         new THREE.Vector3(HALF_SIZE, BASE_HEIGHT, z1),
-        new THREE.Vector3(HALF_SIZE, BASE_HEIGHT, z0)
+        new THREE.Vector3(HALF_SIZE, BASE_HEIGHT, z0),
+        u0,
+        u1
       )
     }
 
     const skirtGeo = new THREE.BufferGeometry()
     skirtGeo.setAttribute('position', new THREE.Float32BufferAttribute(skirtPositions, 3))
-    skirtGeo.setAttribute('color', new THREE.Float32BufferAttribute(skirtColors, 3))
+    skirtGeo.setAttribute('uv', new THREE.Float32BufferAttribute(skirtUVs, 2))
     skirtGeo.computeVertexNormals()
 
     // 3. Platform Base (Bottom plate at BASE_HEIGHT)
@@ -297,6 +310,82 @@ export default function Terrain({ selectedZone }) {
     return texture
   }, [])
 
+  // Realistic Sedimentary Rock Strata Canvas Texture for the Cutaway Diorama Skirt
+  // Horizontally banded geological strata (humus, sandstone, siltstone, shale, basal bedrock)
+  // with fine horizontal micro-laminae bedding lines, vertical joints, and mineral grain stippling.
+  const rockStrataTexture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')
+
+    // Stratigraphic horizontal deposition bands
+    const bands = [
+      { start: 0, end: 32, color: '#34281E' },    // Top humus & root zone beneath grass
+      { start: 32, end: 58, color: '#56473A' },   // Weathered subsoil layer
+      { start: 58, end: 114, color: '#998671' },  // Upper sandstone layer
+      { start: 114, end: 142, color: '#45392F' }, // Dark compacted shale band
+      { start: 142, end: 208, color: '#B3A18A' }, // Buff siltstone & limestone
+      { start: 208, end: 246, color: '#6B5949' }, // Medium mudstone stratum
+      { start: 246, end: 294, color: '#8C7763' }, // Weathered sandstone
+      { start: 294, end: 326, color: '#3C3127' }, // Dense dark shale layer
+      { start: 326, end: 390, color: '#A5917B' }, // Lower sandstone stratum
+      { start: 390, end: 430, color: '#594A3D' }, // Siltstone layer
+      { start: 430, end: 472, color: '#816E5A' }, // Lower sediment
+      { start: 472, end: 512, color: '#2D231B' }  // Basal bedrock base
+    ]
+
+    for (const band of bands) {
+      ctx.fillStyle = band.color
+      ctx.fillRect(0, band.start, 512, band.end - band.start)
+    }
+
+    // Micro-laminae: Horizontal deposition bedding striations across all strata
+    for (let y = 3; y < 512; y += 3 + Math.random() * 5) {
+      const isDark = Math.random() > 0.4
+      ctx.strokeStyle = isDark ? 'rgba(25, 18, 12, 0.38)' : 'rgba(240, 225, 205, 0.24)'
+      ctx.lineWidth = Math.random() > 0.75 ? 1.6 : 0.8
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      for (let x = 0; x <= 512; x += 16) {
+        const wobble = Math.sin(x * 0.04 + y * 0.5) * 1.6 + Math.cos(x * 0.08) * 0.8
+        ctx.lineTo(x, y + wobble)
+      }
+      ctx.stroke()
+    }
+
+    // Vertical geological joints & stress fractures
+    for (let x = 12; x < 512; x += 24 + Math.random() * 36) {
+      ctx.strokeStyle = 'rgba(18, 12, 8, 0.28)'
+      ctx.lineWidth = 1.0 + Math.random() * 1.1
+      ctx.beginPath()
+      let curX = x
+      ctx.moveTo(curX, 28)
+      for (let y = 28; y < 512; y += 22) {
+        curX += (Math.random() - 0.5) * 3.5
+        ctx.lineTo(curX, y)
+      }
+      ctx.stroke()
+    }
+
+    // Natural sedimentary grain stippling
+    const imgData = ctx.getImageData(0, 0, 512, 512)
+    const d = imgData.data
+    for (let i = 0; i < d.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 18
+      d[i] = Math.min(255, Math.max(0, d[i] + noise))
+      d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + noise))
+      d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + noise))
+    }
+    ctx.putImageData(imgData, 0, 0)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.ClampToEdgeWrapping
+    texture.repeat.set(2, 1)
+    return texture
+  }, [])
+
   // Check reduced motion preference
   const prefersReducedMotion = useMemo(() => {
     return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -327,19 +416,19 @@ export default function Terrain({ selectedZone }) {
         />
       </mesh>
 
-      {/* 2. Platform 3D Diorama Skirt (Earth/Rock Side Walls) */}
+      {/* 2. Platform 3D Diorama Skirt (Cutaway Sedimentary Rock Strata) */}
       <mesh geometry={skirtGeometry} receiveShadow>
         <meshStandardMaterial
-          color="#222823"
-          roughness={0.9}
-          metalness={0.05}
+          map={rockStrataTexture}
+          roughness={0.88}
+          metalness={0.08}
           flatShading={false}
         />
       </mesh>
 
       {/* 3. Platform Solid Bottom Plate */}
       <mesh geometry={bottomGeometry}>
-        <meshBasicMaterial color="#181c19" />
+        <meshBasicMaterial color="#2B221A" />
       </mesh>
 
       {/* 4. Realistic Winding River directly inside the Recessed Ground Channel */}
@@ -391,56 +480,56 @@ export default function Terrain({ selectedZone }) {
         </mesh>
       )}
 
-      {/* 7. Compact, Professional White Zone Labels (Positioned neatly without overlapping sensors or river) */}
+      {/* 7. Clean, Minimalist White Zone Pills Matching Image 2 */}
       <Html
         key="zone-badge-1"
-        position={[-30, getTerrainElevation(-30, -32) + 3.2, -32]}
+        position={[-22, getTerrainElevation(-22, -26) + 4.2, -26]}
         center
         distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone1 ? 'active' : ''}`}>
           <span className="zone-indicator-dot green" />
-          <span>Zone 1: North Canopy Reserve</span>
+          <span>01 · North Canopy Reserve</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-2"
-        position={[32, getTerrainElevation(32, -32) + 3.2, -32]}
+        position={[26, getTerrainElevation(26, -24) + 4.2, -24]}
         center
         distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone2 ? 'active' : ''}`}>
           <span className="zone-indicator-dot teal" />
-          <span>Zone 2: East River Basin</span>
+          <span>02 · East River Basin</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-3"
-        position={[-30, getTerrainElevation(-30, 34) + 3.2, 34]}
+        position={[-24, getTerrainElevation(-24, 24) + 4.2, 24]}
         center
         distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone3 ? 'active' : ''}`}>
           <span className="zone-indicator-dot purple" />
-          <span>Zone 3: South Wildlife Corridor</span>
+          <span>03 · Southern reserve</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-4"
-        position={[32, getTerrainElevation(32, 34) + 3.2, 34]}
+        position={[26, getTerrainElevation(26, 24) + 4.2, 24]}
         center
         distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone4 ? 'active' : ''}`}>
           <span className="zone-indicator-dot amber" />
-          <span>Zone 4: West Buffer Zone</span>
+          <span>04 · West Buffer Zone</span>
         </div>
       </Html>
     </group>

@@ -187,32 +187,33 @@ export default function WildlifeModel3D({ event, onSelectWildlife, isSelected })
       )}
 
       {/* Floating 3D Interactive Wildlife Tag — Compact & Anti-Collision */}
-      <Html
-        position={[0, 3.8, 0]}
-        center
-        distanceFactor={55}
-        zIndexRange={[200, 100]}
-      >
-        <div
-          className={`compact-wildlife-tag ${activeHighlight ? 'selected' : ''}`}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectWildlife({ itemType: 'event', data: event })
-          }}
-          title={`${event.title} • Click to inspect fauna detection`}
+      {/* 4. Compact Wildlife Detection Tag — Only rendered when hovered or selected to prevent permanent canopy clutter */}
+      {activeHighlight && (
+        <Html
+          position={[0, 3.8, 0]}
+          center
+          distanceFactor={55}
+          zIndexRange={[200, 100]}
         >
-          <div className="wildlife-tag-icon">
-            <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
-          </div>
+          <div
+            className={`compact-wildlife-tag selected`}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelectWildlife({ itemType: 'event', data: event })
+            }}
+            title={`${event.title} • Click to inspect fauna detection`}
+          >
+            <div className="wildlife-tag-icon">
+              <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
+            </div>
 
-          <span className="wildlife-tag-text">
-            {event.title.includes('Elephant') ? 'Elephant' : event.title.includes('Tiger') ? 'Tiger' : event.title.includes('Leopard') ? 'Leopard' : 'Fauna'}
-          </span>
+            <span className="wildlife-tag-text">
+              {event.title.includes('Elephant') ? 'Elephant' : event.title.includes('Tiger') ? 'Tiger' : event.title.includes('Leopard') ? 'Leopard' : 'Fauna'}
+            </span>
 
-          {/* Rich Tooltip only on hover or selection */}
-          {activeHighlight && (
+            {/* Rich Tooltip on hover or selection */}
             <div className="tag-hover-tooltip wildlife">
               <div className="tooltip-title">{event.title}</div>
               <div className="tooltip-meta">
@@ -223,9 +224,9 @@ export default function WildlifeModel3D({ event, onSelectWildlife, isSelected })
                 <span>{event.timeAgo}</span>
               </div>
             </div>
-          )}
-        </div>
-      </Html>
+          </div>
+        </Html>
+      )}
     </group>
   )
 }

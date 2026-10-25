@@ -2,22 +2,17 @@ import React, { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import { ShieldAlert, Volume2, Flame, User, Footprints, AlertTriangle } from 'lucide-react'
-import { gridToWorld } from './terrainHelper'
+import { gridToWorld, getSensorDisplayTag } from './terrainHelper'
 
 export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
   const ringRef = useRef()
   const [hovered, setHovered] = useState(false)
   
-  // Calculate world coordinates
-  const [baseX, baseY, baseZ] = gridToWorld(
+  // Calculate world coordinates grounded directly at the event/sensor point
+  const [worldX, worldY, worldZ] = gridToWorld(
     event.coordinates.x,
     event.coordinates.y
   )
-
-  // Minor radial offset to ensure clean visual separation from the nearby monitoring sensor post
-  const worldX = baseX + 1.2
-  const worldZ = baseZ + 1.2
-  const worldY = baseY
 
   const isCritical = event.priority === 'critical'
   const isHigh = event.priority === 'high'
@@ -46,25 +41,28 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
     const size = 11
     switch (event.type) {
       case 'chainsaw_sound':
-        return <Volume2 size={size} style={{ color: accentColor }} />
+        return <Volume2 size={size} style={{ color: '#FFFFFF' }} />
       case 'gunshot_sound':
-        return <Flame size={size} style={{ color: accentColor }} />
+        return <Flame size={size} style={{ color: '#FFFFFF' }} />
       case 'human_detection':
-        return <User size={size} style={{ color: accentColor }} />
+        return <User size={size} style={{ color: '#FFFFFF' }} />
       case 'animal_boundary_crossing':
-        return <Footprints size={size} style={{ color: 'var(--accent-purple)' }} />
+        return <Footprints size={size} style={{ color: '#FFFFFF' }} />
       default:
-        return <ShieldAlert size={size} style={{ color: accentColor }} />
+        return <ShieldAlert size={size} style={{ color: '#FFFFFF' }} />
     }
   }
 
-  // Compact threat label title (e.g. "Chainsaw", "Gunshot", "Human Trespass")
-  const getShortLabel = () => {
-    if (event.type === 'chainsaw_sound') return 'Chainsaw'
-    if (event.type === 'gunshot_sound') return 'Gunshot'
-    if (event.type === 'human_detection') return 'Human'
-    if (event.type === 'animal_boundary_crossing') return 'Boundary'
-    return 'Incident'
+  // Display label matching Reference Image 2: "1 · MIC-01" or "2 · MIC-04"
+  const getIncidentLabel = () => {
+    let num = '1'
+    if (event.id === 'EVT-2026-102' || event.sensorId === 'AC-W01') num = '2'
+    else if (event.id === 'EVT-2026-103') num = '3'
+    else if (String(event.id).includes('102')) num = '2'
+    else if (String(event.id).includes('103')) num = '3'
+    
+    const tag = event.sensorId ? getSensorDisplayTag(event.sensorId) : (event.title?.split(' ')[0] || 'Incident')
+    return `${num} · ${tag}`
   }
 
   return (
@@ -98,9 +96,9 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
         </mesh>
       )}
 
-      {/* 3. Compact Threat Tag (Elevated to y=4.6 to sit comfortably above sensors and trees) */}
+      {/* 3. Solid Coral-Red Pill Tag Matching Image 2 ("1 · MIC-01", "2 · MIC-04") */}
       <Html
-        position={[0, 4.6, 0]}
+        position={[0, 4.2, 0]}
         center
         distanceFactor={55}
         zIndexRange={[260, 140]}
@@ -116,7 +114,7 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
           title={`${event.title} (${event.id}) • Click to inspect incident`}
         >
           <div className="threat-tag-icon">{getIcon()}</div>
-          <span className="threat-tag-text">{getShortLabel()}</span>
+          <span className="threat-tag-text">{getIncidentLabel()}</span>
 
           {/* Expanded tooltip on hover/select */}
           {activeHighlight && (

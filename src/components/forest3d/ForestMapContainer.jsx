@@ -3,15 +3,12 @@ import {
   Compass,
   Camera,
   Radio,
-  Activity,
-  ShieldAlert,
-  RotateCcw,
-  Info,
+  Plus,
+  Minus,
+  Maximize2,
   Box,
   Map as MapIcon,
-  Crosshair,
-  Layers,
-  X
+  Check
 } from 'lucide-react'
 
 import ForestCanvas from './ForestCanvas'
@@ -28,42 +25,60 @@ export default function ForestMapContainer({
   onSelectMarker,
   isDedicatedPage = false
 }) {
-  // View mode: '3d' (default) or '2d' (tactical fallback)
+  // View mode: '3d' (default) or '2d' (satellite fallback)
   const [viewMode, setViewMode] = useState('3d')
-  // Active layer filter: 'all', 'cameras', 'acoustics', 'threats', 'wildlife'
-  const [activeLayer, setActiveLayer] = useState('all')
   // Top-Down toggle for 3D camera
   const [isTopDown, setIsTopDown] = useState(false)
-  // Legend expansion toggle
-  const [showLegend, setShowLegend] = useState(true)
+  // Fullscreen expansion toggle
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  // Camera action trigger for vertical HUD controls
+  const [cameraAction, setCameraAction] = useState(null)
+
+  // Subtoolbar active layers: matching Image 2 ([✓] Cameras [✓] Acoustics [✓] Incidents)
+  const [visibleLayers, setVisibleLayers] = useState({
+    cameras: true,
+    acoustics: true,
+    incidents: true
+  })
+
+  const toggleLayer = (layerKey) => {
+    setVisibleLayers((prev) => ({
+      ...prev,
+      [layerKey]: !prev[layerKey]
+    }))
+  }
 
   // Camera reset trigger
   const handleResetCamera = () => {
     setIsTopDown(false)
     setSelectedZone('all')
+    setCameraAction({ type: 'reset', id: Date.now() })
   }
 
   const selectedMarkerId = selectedItem?.data?.id
 
   return (
-    <div className={`surveillance-map-card ${isDedicatedPage ? 'dedicated-map-mode' : ''}`}>
-      {/* Map Header Toolbar with Controls */}
+    <div
+      className={`surveillance-map-card ${isDedicatedPage ? 'dedicated-map-mode' : ''} ${
+        isFullscreen ? 'fullscreen-map-mode' : ''
+      }`}
+    >
+      {/* 1. Primary Map Header Toolbar */}
       <div className="map-card-toolbar">
         <div className="map-toolbar-left">
           <div className="map-card-title">
             <Compass size={15} style={{ color: 'var(--accent-green)' }} />
-            <span>{viewMode === '3d' ? 'Reserve surveillance · 3D' : 'Reserve surveillance · 2D Tactical'}</span>
+            <span>
+              {viewMode === '3d'
+                ? 'Reserve surveillance · 3D'
+                : 'Reserve surveillance · Satellite'}
+            </span>
           </div>
-          <span className="sim-spec-pill">
-            {selectedZone === 'all'
-              ? 'All 4 Sectors • 100x100 Grid'
-              : zones.find((z) => z.id === selectedZone)?.name || 'Simulated Locus'}
-          </span>
+          <span className="sim-spec-pill">4 ZONES</span>
         </div>
 
-        {/* Top Controls: 3D/2D View Toggle & Layer Selector */}
+        {/* 3D terrain vs Satellite Switcher */}
         <div className="map-toolbar-controls">
-          {/* 3D vs 2D Mode Switcher */}
           <div className="btn-group-toggle">
             <button
               className={`btn-toggle-option ${viewMode === '3d' ? 'active' : ''}`}
@@ -71,90 +86,76 @@ export default function ForestMapContainer({
               title="Interactive 3D Forest Environment with elevation and vegetation"
             >
               <Box size={12} />
-              <span>3D Model</span>
+              <span>3D terrain</span>
             </button>
             <button
               className={`btn-toggle-option ${viewMode === '2d' ? 'active' : ''}`}
               onClick={() => setViewMode('2d')}
-              title="2D Tactical GIS Grid Map"
+              title="2D Top-Down Satellite Tactical Map"
             >
               <MapIcon size={12} />
-              <span>2D Tactical</span>
-            </button>
-          </div>
-
-          {/* Layer Filter Chips */}
-          <div className="map-layer-selector">
-            <button
-              className={`layer-chip ${activeLayer === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveLayer('all')}
-            >
-              All
-            </button>
-            <button
-              className={`layer-chip ${activeLayer === 'cameras' ? 'active' : ''}`}
-              onClick={() => setActiveLayer('cameras')}
-            >
-              Cameras ({sensors.filter((s) => s.type === 'camera').length})
-            </button>
-            <button
-              className={`layer-chip ${activeLayer === 'acoustics' ? 'active' : ''}`}
-              onClick={() => setActiveLayer('acoustics')}
-            >
-              Acoustic ({sensors.filter((s) => s.type === 'acoustic').length})
-            </button>
-            <button
-              className={`layer-chip ${activeLayer === 'threats' ? 'active' : ''}`}
-              onClick={() => setActiveLayer('threats')}
-            >
-              Threats ({events.filter((e) => e.category === 'threat').length})
-            </button>
-            <button
-              className={`layer-chip ${activeLayer === 'wildlife' ? 'active' : ''}`}
-              onClick={() => setActiveLayer('wildlife')}
-            >
-              Fauna ({events.filter((e) => e.category === 'wildlife').length})
+              <span>Satellite</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Dedicated Sector Selector Strip for the dedicated 3D Forest Map page */}
-      {isDedicatedPage && (
-        <div className="dedicated-sector-strip">
-          <span className="strip-label">Sector Focus:</span>
+      {/* 2. Subtoolbar Strip matching Reference Image 2: LAYERS + Zone Dropdown */}
+      <div className="map-card-subtoolbar">
+        <div className="subtoolbar-left">
+          <span className="subtoolbar-label">LAYERS:</span>
           <button
-            className={`sector-strip-btn ${selectedZone === 'all' ? 'active' : ''}`}
-            onClick={() => setSelectedZone('all')}
+            className={`layer-toggle-chip ${visibleLayers.cameras ? 'active' : ''}`}
+            onClick={() => toggleLayer('cameras')}
+            title="Toggle optical camera trap markers"
           >
-            All Sectors (Overview)
+            <span className={`layer-checkbox-square ${visibleLayers.cameras ? 'checked' : ''}`}>
+              {visibleLayers.cameras && <Check size={10} strokeWidth={3} />}
+            </span>
+            <span>Cameras</span>
           </button>
-          {zones.map((z) => (
-            <button
-              key={z.id}
-              className={`sector-strip-btn ${selectedZone === z.id ? 'active' : ''}`}
-              onClick={() => setSelectedZone(z.id)}
-            >
-              <span
-                className="sector-dot"
-                style={{
-                  backgroundColor:
-                    z.id === 'zone-1'
-                      ? 'var(--accent-green)'
-                      : z.id === 'zone-2'
-                      ? 'var(--accent-teal)'
-                      : z.id === 'zone-3'
-                      ? 'var(--accent-purple)'
-                      : 'var(--accent-amber)'
-                }}
-              />
-              <span>{z.name}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
-      {/* VIEWPORT: 3D Canvas or 2D Tactical View */}
+          <button
+            className={`layer-toggle-chip ${visibleLayers.acoustics ? 'active' : ''}`}
+            onClick={() => toggleLayer('acoustics')}
+            title="Toggle bioacoustic sensor markers"
+          >
+            <span className={`layer-checkbox-square ${visibleLayers.acoustics ? 'checked' : ''}`}>
+              {visibleLayers.acoustics && <Check size={10} strokeWidth={3} />}
+            </span>
+            <span>Acoustics</span>
+          </button>
+
+          <button
+            className={`layer-toggle-chip ${visibleLayers.incidents ? 'active' : ''}`}
+            onClick={() => toggleLayer('incidents')}
+            title="Toggle anti-poaching incident markers"
+          >
+            <span className={`layer-checkbox-square ${visibleLayers.incidents ? 'checked' : ''}`}>
+              {visibleLayers.incidents && <Check size={10} strokeWidth={3} />}
+            </span>
+            <span>Incidents</span>
+          </button>
+        </div>
+
+        <div className="subtoolbar-right">
+          <select
+            className="zone-select-dropdown"
+            value={selectedZone}
+            onChange={(e) => setSelectedZone(e.target.value)}
+            aria-label="Filter by reserve sector"
+          >
+            <option value="all">All zones</option>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* 3. VIEWPORT: 3D Canvas or 2D Satellite View */}
       {viewMode === '3d' ? (
         <div className="map-canvas-container">
           {/* Main 3D Three.js Forest Canvas */}
@@ -165,7 +166,8 @@ export default function ForestMapContainer({
               sensors={sensors}
               events={events}
               selectedZone={selectedZone}
-              activeLayer={activeLayer}
+              visibleLayers={visibleLayers}
+              cameraAction={cameraAction}
               isTopDown={isTopDown}
               selectedMarkerId={selectedMarkerId}
               onSelectMarker={onSelectMarker}
@@ -173,130 +175,96 @@ export default function ForestMapContainer({
             />
           </div>
 
-          {/* HUD Sector Selector (shown on overview mode when dedicated strip is absent) */}
-          {!isDedicatedPage && (
-            <div className="hud-zone-selector">
-              <span className="hud-zone-label">Sector:</span>
-              <button
-                className={`hud-zone-btn ${selectedZone === 'all' ? 'active' : ''}`}
-                onClick={() => setSelectedZone('all')}
-              >
-                All
-              </button>
-              {zones.map((z) => (
-                <button
-                  key={z.id}
-                  className={`hud-zone-btn ${selectedZone === z.id ? 'active' : ''}`}
-                  onClick={() => setSelectedZone(z.id)}
-                >
-                  {z.code}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* HUD Top-Left Metrics: Pitch 45° and Relief ×1.5 */}
+          <div className="hud-top-left-metrics">
+            <div className="hud-metric-pill">Pitch 45°</div>
+            <div className="hud-metric-pill">Relief ×1.5</div>
+          </div>
 
-          {/* HUD 3D Camera Controls (top-right over 3D canvas) */}
-          <div className="hud-camera-actions">
+          {/* HUD Top-Right Compass Rose */}
+          <button
+            className="hud-compass-rose"
+            onClick={handleResetCamera}
+            title="Reset North orientation (Pitch 45° Isometric)"
+          >
+            <span className="compass-n-text">N</span>
+            <div className="compass-arrow-glyph" />
+          </button>
+
+          {/* HUD Right-Edge Floating Vertical Toolbar (+, −, Compass, Fullscreen) */}
+          <div className="hud-vertical-toolbar">
             <button
-              className={`hud-action-btn ${isTopDown ? 'active' : ''}`}
-              onClick={() => setIsTopDown(!isTopDown)}
-              title={isTopDown ? 'Switch to Angled 3D Perspective' : 'Switch to Orthographic Top-Down'}
+              className="hud-vert-btn"
+              onClick={() => setCameraAction({ type: 'zoomIn', id: Date.now() })}
+              title="Zoom In"
+              aria-label="Zoom In"
             >
-              <Crosshair size={12} />
-              <span>{isTopDown ? 'Perspective' : 'Top-Down'}</span>
+              <Plus size={14} />
             </button>
-
             <button
-              className="hud-action-btn"
-              onClick={handleResetCamera}
-              title="Reset 3D camera to default isometric view"
+              className="hud-vert-btn"
+              onClick={() => setCameraAction({ type: 'zoomOut', id: Date.now() })}
+              title="Zoom Out"
+              aria-label="Zoom Out"
             >
-              <RotateCcw size={12} />
-              <span>Reset</span>
+              <Minus size={14} />
+            </button>
+            <button
+              className="hud-vert-btn"
+              onClick={handleResetCamera}
+              title="Reset View"
+              aria-label="Reset View"
+            >
+              <Compass size={14} />
+            </button>
+            <button
+              className="hud-vert-btn"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Expand Fullscreen'}
+              aria-label="Toggle Fullscreen"
+            >
+              <Maximize2 size={13} />
             </button>
           </div>
 
-          {/* HUD Map Legend (bottom-left) */}
-          {showLegend && (
-            <div className="map-hud-legend">
-              <div className="legend-header-row">
-                <span>Symbology Legend</span>
-                <button
-                  onClick={() => setShowLegend(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '0 2px'
-                  }}
-                  title="Hide legend"
-                >
-                  <X size={10} />
-                </button>
+          {/* HUD Bottom-Left Scale Bar: — 500 m */}
+          <div className="hud-bottom-scale">
+            <div className="scale-bar-row">
+              <div className="scale-tick-mark start" />
+              <div className="scale-line-segment" />
+              <div className="scale-tick-mark end" />
+              <span className="scale-distance-text">500 m</span>
+            </div>
+            <div className="scale-disclaimer-text">
+              Illustrative terrain · Not for field navigation
+            </div>
+          </div>
+
+          {/* HUD Bottom Footer Bar: Legend Pills + OBLIQUE RESERVE MODEL */}
+          <div className="hud-bottom-legend-bar">
+            <div className="legend-pills-row">
+              <div className="legend-item-pill">
+                <Camera size={11} className="legend-icon camera" />
+                <span>Camera</span>
               </div>
-              <div className="legend-grid-items">
-                <div className="legend-entry">
-                  <Camera size={11} style={{ color: 'var(--accent-teal)' }} />
-                  <span>Optical Camera Trap</span>
-                </div>
-                <div className="legend-entry">
-                  <Radio size={11} style={{ color: 'var(--accent-green)' }} />
-                  <span>Bioacoustic Audio Node</span>
-                </div>
-                <div className="legend-entry">
-                  <ShieldAlert size={11} style={{ color: 'var(--accent-red)' }} />
-                  <span>Threat / Incident Beacon</span>
-                </div>
-                <div className="legend-entry">
-                  <Activity size={11} style={{ color: 'var(--accent-purple)' }} />
-                  <span>3D Wildlife Detection</span>
-                </div>
-                <div className="legend-entry">
-                  <span
-                    style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--accent-amber)',
-                      display: 'inline-block'
-                    }}
-                  />
-                  <span>Sensor Offline (Amber)</span>
-                </div>
-                <div className="legend-entry">
-                  <span
-                    style={{
-                      width: 14,
-                      height: 2,
-                      backgroundColor: 'rgba(232, 170, 58, 0.7)',
-                      display: 'inline-block'
-                    }}
-                  />
-                  <span>Animal Trail Waypoint</span>
-                </div>
+              <div className="legend-item-pill">
+                <Radio size={11} className="legend-icon acoustic" />
+                <span>Acoustic</span>
+              </div>
+              <div className="legend-item-pill">
+                <span className="legend-color-dot incident" />
+                <span>Incident</span>
+              </div>
+              <div className="legend-item-pill">
+                <span className="legend-color-dot offline" />
+                <span>Offline</span>
               </div>
             </div>
-          )}
-
-          {!showLegend && (
-            <button
-              className="hud-action-btn"
-              style={{ position: 'absolute', bottom: 10, left: 10, zIndex: 10 }}
-              onClick={() => setShowLegend(true)}
-            >
-              <Layers size={11} />
-              <span>Legend</span>
-            </button>
-          )}
-
-          {/* Interaction Instruction Hint */}
-          <div className="hud-interaction-hint">
-            Drag to Rotate • Right-click to Pan • Scroll to Zoom • Click markers to inspect
+            <div className="legend-oblique-label">OBLIQUE RESERVE MODEL</div>
           </div>
         </div>
       ) : (
-        /* Replaced 2D Tactical View with Clean GIS Representation & Flowing River */
+        /* Preserved 2D Satellite / Tactical View with Clean GIS Representation & Flowing River */
         <SimulatedForestMap
           zones={zones}
           trails={trails}
@@ -306,18 +274,10 @@ export default function ForestMapContainer({
           setSelectedZone={setSelectedZone}
           selectedItem={selectedItem}
           onSelectMarker={onSelectMarker}
-          activeLayer={activeLayer}
+          activeLayer={visibleLayers.incidents ? 'threats' : 'all'}
           onSwitchTo3D={() => setViewMode('3d')}
         />
       )}
-
-      {/* Simulated Coordinates Disclaimer Strip */}
-      <div className="map-disclaimer-strip">
-        <Info size={12} style={{ color: 'var(--accent-teal)', flexShrink: 0 }} />
-        <span>
-          <strong>Academic Simulation Notice:</strong> Elevations, canopy vegetation, animal trails, and GPS telemetry are synthetic mathematical models engineered for college project demonstration and anti-poaching operations research.
-        </span>
-      </div>
     </div>
   )
 }

@@ -1003,11 +1003,115 @@
   border-radius: 50%;
 }
 
+/* Subtoolbar Strip matching Reference Image 2: LAYERS + Zone Dropdown */
+.map-card-subtoolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background-color: #F8FAF9;
+  border-bottom: 1px solid var(--border-standard);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.subtoolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subtoolbar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.layer-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-xs);
+  transition: all 0.15s ease;
+}
+
+.layer-toggle-chip:hover {
+  color: var(--text-primary);
+}
+
+.layer-toggle-chip.active {
+  color: var(--text-primary);
+}
+
+.layer-checkbox-square {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #94A3B8;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF;
+  transition: all 0.15s;
+}
+
+.layer-checkbox-square.checked {
+  background-color: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #FFFFFF;
+}
+
+.subtoolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.zone-select-dropdown {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-standard);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.zone-select-dropdown:hover,
+.zone-select-dropdown:focus {
+  border-color: var(--accent-green);
+}
+
+/* Fullscreen expansion mode for 3D map */
+.surveillance-map-card.fullscreen-map-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border-radius: 0;
+  border: none;
+}
+
+.surveillance-map-card.fullscreen-map-mode .map-canvas-container {
+  height: calc(100vh - 84px) !important;
+}
+
 /* 3D Map Viewport */
 .map-canvas-container {
   position: relative;
   height: 520px;
-  background-color: #EBF0EA; /* Soft daylight sky tone */
+  background-color: #CBD1CB; /* Neutral daylight background matching Image 2 */
   overflow: hidden;
   width: 100%;
   flex: 1;
@@ -1037,89 +1141,214 @@
   cursor: grabbing;
 }
 
-/* Map HUD Overlays */
-.hud-zone-selector {
+/* Map HUD Overlays Matching Reference Image 2 */
+
+/* 1. HUD Top-Left Metrics: Pitch 45° & Relief ×1.5 */
+.hud-top-left-metrics {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 3px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-standard);
-  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.08);
+  gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hud-metric-pill {
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(4px);
+  user-select: none;
+}
+
+/* 2. HUD Top-Right Compass Rose with N Arrow */
+.hud-compass-rose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hud-compass-rose:hover {
+  transform: scale(1.08);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
+.compass-n-text {
+  font-size: 9px;
+  font-weight: 800;
+  color: #1E293B;
+  line-height: 1;
+}
+
+.compass-arrow-glyph {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-bottom: 9px solid #C94232;
+  margin-top: 1px;
+}
+
+/* 3. HUD Right-Edge Vertical Toolbar (+, −, Compass, Fullscreen) */
+.hud-vertical-toolbar {
+  position: absolute;
+  top: 54px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  background-color: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
   z-index: 10;
 }
 
-.hud-zone-label {
+.hud-vert-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: #475569;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.hud-vert-btn:last-child {
+  border-bottom: none;
+}
+
+.hud-vert-btn:hover {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
+
+/* 4. HUD Bottom-Left Scale Bar: — 500 m */
+.hud-bottom-scale {
+  position: absolute;
+  bottom: 38px;
+  left: 14px;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scale-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.scale-tick-mark {
+  width: 1px;
+  height: 7px;
+  background-color: #1E293B;
+}
+
+.scale-line-segment {
+  width: 52px;
+  height: 1.5px;
+  background-color: #1E293B;
+}
+
+.scale-distance-text {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: #1E293B;
+}
+
+.scale-disclaimer-text {
+  font-size: 9.5px;
+  color: #64748B;
+}
+
+/* 5. HUD Bottom Legend Bar: Camera, Acoustic, Incident, Offline + Model Label */
+.hud-bottom-legend-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.94);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  z-index: 10;
+  user-select: none;
+}
+
+.legend-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.legend-item-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.legend-icon.camera {
+  color: #0284C7;
+}
+
+.legend-icon.acoustic {
+  color: #16A34A;
+}
+
+.legend-color-dot.incident {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #C94232;
+}
+
+.legend-color-dot.offline {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D97706;
+}
+
+.legend-oblique-label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  margin-right: 2px;
-}
-
-.hud-zone-btn {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  background-color: transparent;
-  border: 1px solid transparent;
-  transition: all 0.15s;
-}
-
-.hud-zone-btn:hover {
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
-}
-
-.hud-zone-btn.active {
-  background-color: var(--bg-surface);
-  color: var(--accent-green);
-  border-color: var(--accent-green-border);
-}
-
-.hud-camera-actions {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 10;
-}
-
-.hud-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--border-standard);
-  color: var(--text-secondary);
-  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.08);
-  backdrop-filter: blur(4px);
-  transition: all 0.15s;
-}
-
-.hud-action-btn:hover {
-  background-color: #FFFFFF;
-  color: var(--text-primary);
-  border-color: var(--border-hover);
-}
-
-.hud-action-btn.active {
-  background-color: var(--bg-surface);
-  color: var(--accent-green);
-  border-color: var(--accent-green-border);
+  letter-spacing: 0.6px;
+  color: #64748B;
+  font-family: var(--font-mono);
 }
 
 /* 3D Compact Marker Cards & Anti-Collision Labels — Matching Image 2 */
@@ -1128,13 +1357,13 @@
   align-items: center;
   gap: 5px;
   background-color: #FFFFFF;
-  border: 1px solid var(--border-standard);
-  border-radius: var(--radius-xs);
-  padding: 3px 7px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 999px;
+  padding: 3px 8px;
   font-size: 11px;
-  color: var(--text-primary);
+  color: #1E293B;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(36, 58, 48, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   user-select: none;
   pointer-events: auto;
   transition: all 0.15s ease-out;
@@ -1142,24 +1371,20 @@
   position: relative;
 }
 
-.compact-sensor-tag.camera {
-  border-left: 3px solid var(--accent-teal);
-}
-
-.compact-sensor-tag.acoustic {
-  border-left: 3px solid var(--accent-green);
-}
-
 .compact-sensor-tag.offline {
-  border-left: 3px solid var(--accent-amber);
-  background-color: #FFFDF9;
+  background-color: #FFF8E6;
+  border-color: #F0C36D;
+  color: #92580E;
+}
+
+.compact-sensor-tag.offline .tag-id-text {
+  color: #92580E;
 }
 
 .compact-sensor-tag:hover,
 .compact-sensor-tag.selected {
-  border-color: var(--accent-green);
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 14px rgba(36, 58, 48, 0.2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   z-index: 60;
 }
 
@@ -1173,24 +1398,22 @@
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 700;
-  color: var(--text-primary);
   letter-spacing: -0.2px;
 }
 
-/* Compact Threat Incident Tag */
+/* Compact Threat Incident Tag Matching Reference Image 2 (Solid Coral-Red Pill) */
 .compact-threat-tag {
   display: flex;
   align-items: center;
   gap: 5px;
-  background-color: #FFFFFF;
-  border: 1px solid var(--border-standard);
-  border-left: 3px solid var(--accent-red);
-  border-radius: var(--radius-xs);
-  padding: 3px 8px;
+  background-color: #C94232;
+  border: 1px solid #B03425;
+  border-radius: 999px;
+  padding: 3px 9px;
   font-size: 11px;
-  color: var(--accent-red);
+  color: #FFFFFF;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(201, 66, 50, 0.2);
+  box-shadow: 0 2px 8px rgba(201, 66, 50, 0.38);
   user-select: none;
   pointer-events: auto;
   transition: all 0.15s ease-out;
@@ -1198,28 +1421,27 @@
   position: relative;
 }
 
-.compact-threat-tag.high {
-  border-left-color: var(--accent-amber);
-  color: var(--accent-amber);
-  box-shadow: 0 2px 8px rgba(183, 122, 32, 0.2);
-}
-
 .compact-threat-tag:hover,
 .compact-threat-tag.selected {
   transform: translateY(-2px) scale(1.06);
-  box-shadow: 0 4px 16px rgba(201, 66, 50, 0.3);
+  box-shadow: 0 4px 16px rgba(201, 66, 50, 0.45);
   z-index: 70;
 }
 
-.threat-tag-icon {
+.compact-threat-tag .threat-tag-icon {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.threat-tag-text {
-  font-size: 10.5px;
+.compact-threat-tag .threat-tag-icon svg {
+  color: #FFFFFF !important;
+}
+
+.compact-threat-tag .threat-tag-text {
+  font-size: 11px;
   font-weight: 700;
+  color: #FFFFFF !important;
   font-family: var(--font-sans);
 }
 
