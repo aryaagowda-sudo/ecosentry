@@ -160,62 +160,74 @@ export default function Terrain({ selectedZone }) {
     botGeo.rotateX(Math.PI / 2) // Facing down
     botGeo.translate(0, BASE_HEIGHT, 0)
 
-    // 4. Realistic Winding Blue River Ribbon
-    // Generates a smooth ribbon adhering to the valley floor with variable width
-    const riverSteps = 60
+    // 4. Realistic Winding Blue River Mesh directly inside the Recessed Channel
+    // Built with 120 steps along the channel curves and 4 segments across the width,
+    // conforming smoothly to the valley bed while remaining slightly crowned in the center.
+    const riverSteps = 120
+    const riverSegmentsX = 4
     const riverPositions = []
-    const riverNormals = []
     const riverUVs = []
 
     for (let i = 0; i <= riverSteps; i++) {
       const t = i / riverSteps
       const z = -HALF_SIZE + t * WORLD_SIZE
       const centerX = getRiverCenterlineX(z)
-      const waterY = Math.min(2.1, getTerrainElevation(centerX, z) + 0.35)
+      const width = 3.8 + (1 - Math.abs(z / HALF_SIZE)) * 1.4
 
-      // Slight width expansion in the wetland delta (Zone 2)
-      const width = 3.8 + (1 - Math.abs(z / HALF_SIZE)) * 1.6
-
-      const leftX = centerX - width / 2
-      const rightX = centerX + width / 2
-
-      // Quad vertices for river segment
       if (i > 0) {
         const prevT = (i - 1) / riverSteps
         const prevZ = -HALF_SIZE + prevT * WORLD_SIZE
         const prevCenterX = getRiverCenterlineX(prevZ)
-        const prevWaterY = Math.min(2.1, getTerrainElevation(prevCenterX, prevZ) + 0.35)
-        const prevWidth = 3.8 + (1 - Math.abs(prevZ / HALF_SIZE)) * 1.6
+        const prevWidth = 3.8 + (1 - Math.abs(prevZ / HALF_SIZE)) * 1.4
 
-        const pL0 = new THREE.Vector3(prevCenterX - prevWidth / 2, prevWaterY, prevZ)
-        const pR0 = new THREE.Vector3(prevCenterX + prevWidth / 2, prevWaterY, prevZ)
-        const pL1 = new THREE.Vector3(leftX, waterY, z)
-        const pR1 = new THREE.Vector3(rightX, waterY, z)
+        const v0 = prevT * 12
+        const v1 = t * 12
 
-        // Triangle 1
-        riverPositions.push(pL0.x, pL0.y, pL0.z, pR0.x, pR0.y, pR0.z, pR1.x, pR1.y, pR1.z)
-        // Triangle 2
-        riverPositions.push(pL0.x, pL0.y, pL0.z, pR1.x, pR1.y, pR1.z, pL1.x, pL1.y, pL1.z)
+        for (let j = 0; j < riverSegmentsX; j++) {
+          const u0 = j / riverSegmentsX
+          const u1 = (j + 1) / riverSegmentsX
 
-        const v0 = prevT * 6
-        const v1 = t * 6
+          // Relative offsets across channel width [-0.5 to +0.5]
+          const normOffset0 = u0 - 0.5
+          const normOffset1 = u1 - 0.5
 
-        // UV mapping for smooth downstream flow: u across width (0-1), v along length
-        // Triangle 1: pL0(0, v0), pR0(1, v0), pR1(1, v1)
-        riverUVs.push(0, v0, 1, v0, 1, v1)
-        // Triangle 2: pL0(0, v0), pR1(1, v1), pL1(0, v1)
-        riverUVs.push(0, v0, 1, v1, 0, v1)
+          // Current step vertices across width
+          const currX0 = centerX + normOffset0 * width
+          const currX1 = centerX + normOffset1 * width
+          const currGround0 = getTerrainElevation(currX0, z)
+          const currGround1 = getTerrainElevation(currX1, z)
+          // Crown profile: +0.24 above center bed, +0.14 at riverbank edges
+          const currCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
+          const currCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          const currY0 = currGround0 + currCrown0
+          const currY1 = currGround1 + currCrown1
 
-        for (let k = 0; k < 6; k++) {
-          riverNormals.push(0, 1, 0)
+          // Previous step vertices across width
+          const prevX0 = prevCenterX + normOffset0 * prevWidth
+          const prevX1 = prevCenterX + normOffset1 * prevWidth
+          const prevGround0 = getTerrainElevation(prevX0, prevZ)
+          const prevGround1 = getTerrainElevation(prevX1, prevZ)
+          const prevCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
+          const prevCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          const prevY0 = prevGround0 + prevCrown0
+          const prevY1 = prevGround1 + prevCrown1
+
+          // Quad vertices:
+          // Triangle 1
+          riverPositions.push(prevX0, prevY0, prevZ, prevX1, prevY1, prevZ, currX1, currY1, z)
+          riverUVs.push(u0, v0, u1, v0, u1, v1)
+
+          // Triangle 2
+          riverPositions.push(prevX0, prevY0, prevZ, currX1, currY1, z, currX0, currY0, z)
+          riverUVs.push(u0, v0, u1, v1, u0, v1)
         }
       }
     }
 
     const rivGeo = new THREE.BufferGeometry()
     rivGeo.setAttribute('position', new THREE.Float32BufferAttribute(riverPositions, 3))
-    rivGeo.setAttribute('normal', new THREE.Float32BufferAttribute(riverNormals, 3))
     rivGeo.setAttribute('uv', new THREE.Float32BufferAttribute(riverUVs, 2))
+    rivGeo.computeVertexNormals()
 
     return {
       topGeometry: topGeo,
@@ -225,42 +237,55 @@ export default function Terrain({ selectedZone }) {
     }
   }, [])
 
-  // Procedural flowing water texture with caustics and wave crests
+  // Procedural flowing water texture with caustics, stream ribbons, and wave crests
   const waterTexture = useMemo(() => {
     const canvas = document.createElement('canvas')
     canvas.width = 512
     canvas.height = 512
     const ctx = canvas.getContext('2d')
 
-    // Base river color fill
+    // 1. Base natural forest river gradient
     const bgGrad = ctx.createLinearGradient(0, 0, 0, 512)
-    bgGrad.addColorStop(0, '#1c738c')
-    bgGrad.addColorStop(0.5, '#258aa5')
-    bgGrad.addColorStop(1, '#1b6e86')
+    bgGrad.addColorStop(0, '#155264')
+    bgGrad.addColorStop(0.5, '#1e758c')
+    bgGrad.addColorStop(1, '#185d72')
     ctx.fillStyle = bgGrad
     ctx.fillRect(0, 0, 512, 512)
 
-    // Flowing caustics / water ripple streaks
-    for (let row = 0; row < 512; row += 24) {
-      // Primary wave line
-      ctx.strokeStyle = 'rgba(235, 252, 255, 0.42)'
-      ctx.lineWidth = 3.5
+    // 2. Longitudinal flow streamlines (parallel current ribbons)
+    for (let col = 0; col < 512; col += 32) {
+      ctx.strokeStyle = 'rgba(75, 185, 208, 0.22)'
+      ctx.lineWidth = 12
+      ctx.beginPath()
+      ctx.moveTo(col, 0)
+      for (let y = 0; y <= 512; y += 32) {
+        const xOffset = Math.sin((y / 512) * Math.PI * 4 + col) * 6
+        ctx.lineTo(col + xOffset, y)
+      }
+      ctx.stroke()
+    }
+
+    // 3. Flowing caustics / transverse water ripples
+    for (let row = 0; row < 512; row += 20) {
+      // Primary wave crest
+      ctx.strokeStyle = 'rgba(215, 245, 255, 0.45)'
+      ctx.lineWidth = 3.0
       ctx.beginPath()
       ctx.moveTo(0, row)
       for (let x = 0; x <= 512; x += 16) {
-        const yOffset = Math.sin((x / 512) * Math.PI * 6 + row) * 5.5 + Math.cos((x / 512) * Math.PI * 10) * 2.5
+        const yOffset = Math.sin((x / 512) * Math.PI * 6 + row) * 4.5 + Math.cos((x / 512) * Math.PI * 10) * 2.0
         ctx.lineTo(x, row + yOffset)
       }
       ctx.stroke()
 
-      // Subtle thin highlight ripple
+      // Subtle bright sunlight shimmer highlight
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)'
-      ctx.lineWidth = 1.6
+      ctx.lineWidth = 1.4
       ctx.beginPath()
-      ctx.moveTo(0, row + 8)
+      ctx.moveTo(0, row + 7)
       for (let x = 0; x <= 512; x += 20) {
-        const yOffset = Math.sin((x / 512) * Math.PI * 8 + row * 0.7) * 4.0
-        ctx.lineTo(x, row + 8 + yOffset)
+        const yOffset = Math.sin((x / 512) * Math.PI * 8 + row * 0.7) * 3.5
+        ctx.lineTo(x, row + 7 + yOffset)
       }
       ctx.stroke()
     }
@@ -268,14 +293,19 @@ export default function Terrain({ selectedZone }) {
     const texture = new THREE.CanvasTexture(canvas)
     texture.wrapS = THREE.RepeatWrapping
     texture.wrapT = THREE.RepeatWrapping
-    texture.repeat.set(1, 3)
+    texture.repeat.set(1, 4)
     return texture
+  }, [])
+
+  // Check reduced motion preference
+  const prefersReducedMotion = useMemo(() => {
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
 
   // Animate water flowing downstream from North to South continuously
   useFrame((_, delta) => {
-    if (waterTexture) {
-      waterTexture.offset.y -= delta * 0.38
+    if (waterTexture && !prefersReducedMotion) {
+      waterTexture.offset.y -= delta * 0.30
     }
   })
 
@@ -312,15 +342,16 @@ export default function Terrain({ selectedZone }) {
         <meshBasicMaterial color="#181c19" />
       </mesh>
 
-      {/* 4. Realistic Winding Blue River with Visibly Flowing Water */}
-      <mesh geometry={riverGeometry}>
+      {/* 4. Realistic Winding River directly inside the Recessed Ground Channel */}
+      <mesh geometry={riverGeometry} receiveShadow>
         <meshStandardMaterial
           map={waterTexture}
-          color="#2ba5c4"
+          color="#268fa8"
           roughness={0.16}
-          metalness={0.3}
+          metalness={0.32}
           transparent
-          opacity={0.92}
+          opacity={0.94}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -362,6 +393,7 @@ export default function Terrain({ selectedZone }) {
 
       {/* 7. Compact, Professional White Zone Labels (Positioned neatly without overlapping sensors or river) */}
       <Html
+        key="zone-badge-1"
         position={[-30, getTerrainElevation(-30, -32) + 2.5, -32]}
         center
         distanceFactor={60}
@@ -374,6 +406,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+        key="zone-badge-2"
         position={[32, getTerrainElevation(32, -32) + 2.5, -32]}
         center
         distanceFactor={60}
@@ -386,6 +419,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+        key="zone-badge-3"
         position={[-30, getTerrainElevation(-30, 34) + 2.5, 34]}
         center
         distanceFactor={60}
@@ -398,6 +432,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+        key="zone-badge-4"
         position={[32, getTerrainElevation(32, 34) + 2.5, 34]}
         center
         distanceFactor={60}

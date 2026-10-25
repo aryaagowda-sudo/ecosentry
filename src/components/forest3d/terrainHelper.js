@@ -236,24 +236,23 @@ export function getTerrainElevation(x, z) {
     elev += (1 + Math.cos((distToBufferHill / 30) * Math.PI)) * 1.8 * bufferHillWeight
   }
 
-  // 6. River Valley Carving
-  const riverX = getRiverCenterlineX(z)
-  const distFromRiver = Math.abs(x - riverX)
-  const riverValleyWidth = 10.0
-
-  if (distFromRiver < riverValleyWidth) {
-    // Carve deep, smooth riverbed
-    const valleyFactor = Math.cos((distFromRiver / riverValleyWidth) * (Math.PI / 2))
-    const carveDepth = valleyFactor * 3.8
-    elev = Math.max(1.1, elev - carveDepth)
-  }
-
-  // 7. Smooth outer boundary lip for the 3D platform edges
+  // 6. Smooth outer boundary lip for the 3D diorama platform edges
   const maxEdgeDist = Math.max(Math.abs(x), Math.abs(z))
   if (maxEdgeDist > 44) {
     const edgeT = Math.min(1, (maxEdgeDist - 44) / 5.5)
-    // Smoothly transition to 3.4 at the perimeter edge so the 3D diorama skirt is neat
     elev = elev * (1 - edgeT) + 3.4 * edgeT
+  }
+
+  // 7. River Valley Carving: Deep, smooth natural channel running through the reserve
+  // Applied after edge blend so the river channel cuts cleanly through the platform boundary
+  const riverX = getRiverCenterlineX(z)
+  const distFromRiver = Math.abs(x - riverX)
+  const riverValleyWidth = 9.5
+
+  if (distFromRiver < riverValleyWidth) {
+    const valleyFactor = Math.cos((distFromRiver / riverValleyWidth) * (Math.PI / 2))
+    const carveDepth = valleyFactor * 3.6
+    elev = Math.max(1.1, elev - carveDepth)
   }
 
   return elev
