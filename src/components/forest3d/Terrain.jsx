@@ -394,53 +394,53 @@ export default function Terrain({ selectedZone }) {
       {/* 7. Compact, Professional White Zone Labels (Positioned neatly without overlapping sensors or river) */}
       <Html
         key="zone-badge-1"
-        position={[-30, getTerrainElevation(-30, -32) + 2.5, -32]}
+        position={[-30, getTerrainElevation(-30, -32) + 3.2, -32]}
         center
-        distanceFactor={60}
+        distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone1 ? 'active' : ''}`}>
           <span className="zone-indicator-dot green" />
-          <span>Zone 1 · North Canopy</span>
+          <span>Zone 1: North Canopy Reserve</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-2"
-        position={[32, getTerrainElevation(32, -32) + 2.5, -32]}
+        position={[32, getTerrainElevation(32, -32) + 3.2, -32]}
         center
-        distanceFactor={60}
+        distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone2 ? 'active' : ''}`}>
           <span className="zone-indicator-dot teal" />
-          <span>Zone 2 · River Basin</span>
+          <span>Zone 2: East River Basin</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-3"
-        position={[-30, getTerrainElevation(-30, 34) + 2.5, 34]}
+        position={[-30, getTerrainElevation(-30, 34) + 3.2, 34]}
         center
-        distanceFactor={60}
+        distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone3 ? 'active' : ''}`}>
           <span className="zone-indicator-dot purple" />
-          <span>Zone 3 · South Corridor</span>
+          <span>Zone 3: South Wildlife Corridor</span>
         </div>
       </Html>
 
       <Html
         key="zone-badge-4"
-        position={[32, getTerrainElevation(32, 34) + 2.5, 34]}
+        position={[32, getTerrainElevation(32, 34) + 3.2, 34]}
         center
-        distanceFactor={60}
+        distanceFactor={65}
         zIndexRange={[80, 20]}
       >
         <div className={`compact-zone-badge ${isZone4 ? 'active' : ''}`}>
           <span className="zone-indicator-dot amber" />
-          <span>Zone 4 · West Buffer</span>
+          <span>Zone 4: West Buffer Zone</span>
         </div>
       </Html>
     </group>

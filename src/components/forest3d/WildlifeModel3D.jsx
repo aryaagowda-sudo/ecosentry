@@ -188,9 +188,9 @@ export default function WildlifeModel3D({ event, onSelectWildlife, isSelected })
 
       {/* Floating 3D Interactive Wildlife Tag — Compact & Anti-Collision */}
       <Html
-        position={[0, 3.5, 0]}
+        position={[0, 3.8, 0]}
         center
-        distanceFactor={52}
+        distanceFactor={55}
         zIndexRange={[200, 100]}
       >
         <div

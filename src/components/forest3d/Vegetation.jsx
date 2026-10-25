@@ -53,11 +53,11 @@ export default function Vegetation() {
 
     // Helper to check if a location is cleared
     function isNearClearedLocation(x, z) {
-      // 1. Avoid riverbed water
+      // 1. Avoid riverbed water and immediate riparian channel banks
       const riverX = getRiverCenterlineX(z)
-      if (Math.abs(x - riverX) < 4.2) return true
+      if (Math.abs(x - riverX) < 4.8) return true
 
-      // 2. Avoid sensor & event clearings
+      // 2. Avoid sensor & event clearings so markers are unobstructed
       for (let i = 0; i < clearedZones.length; i++) {
         const cz = clearedZones[i]
         const d2 = (x - cz.x) * (x - cz.x) + (z - cz.z) * (z - cz.z)
@@ -65,19 +65,20 @@ export default function Vegetation() {
       }
 
       // 3. Keep slightly within outer platform boundary
-      if (Math.abs(x) > 46 || Math.abs(z) > 46) return true
+      if (Math.abs(x) > 44 || Math.abs(z) > 44) return true
 
       return false
     }
 
-    // Generate dense tree blanket: 1,600 candidate positions
-    const targetCount = 1500
+    // Generate balanced, natural tree canopy: 650 trees across reserve
+    // Allows terrain topography, river, and surveillance network to be seen clearly
+    const targetCount = 650
     let attempts = 0
 
-    while ((pines.length + broadleafs.length + riverTrees.length + shrubs.length) < targetCount && attempts < 2400) {
+    while ((pines.length + broadleafs.length + riverTrees.length + shrubs.length) < targetCount && attempts < 1800) {
       attempts++
-      const x = -45 + rnd() * 90
-      const z = -45 + rnd() * 90
+      const x = -44 + rnd() * 88
+      const z = -44 + rnd() * 88
 
       if (isNearClearedLocation(x, z)) continue
 
@@ -85,7 +86,7 @@ export default function Vegetation() {
       const riverX = getRiverCenterlineX(z)
       const distFromRiver = Math.abs(x - riverX)
 
-      const scale = 0.75 + rnd() * 0.55
+      const scale = 0.65 + rnd() * 0.35
       const rot = rnd() * Math.PI * 2
 
       if (distFromRiver < 9.0) {
@@ -94,9 +95,9 @@ export default function Vegetation() {
       } else if (x < 8 && z < 8) {
         // Zone 1 & High Ridges: dense mix of tall pines and rainforest broadleaf
         if (rnd() > 0.42 || y > 7.0) {
-          pines.push({ x, y, z, scale: scale * 1.15, rot })
+          pines.push({ x, y, z, scale: scale * 1.1, rot })
         } else {
-          broadleafs.push({ x, y, z, scale: scale * 1.05, rot })
+          broadleafs.push({ x, y, z, scale: scale * 1.0, rot })
         }
       } else if (x <= 5 && z > 5) {
         // Zone 3: Wildlife Corridor (rich forest with shrub undergrowth)

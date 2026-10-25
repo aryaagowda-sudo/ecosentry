@@ -98,11 +98,11 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
         </mesh>
       )}
 
-      {/* 3. Compact Threat Tag (Elevated to y=4.4 to sit comfortably above sensors) */}
+      {/* 3. Compact Threat Tag (Elevated to y=4.6 to sit comfortably above sensors and trees) */}
       <Html
-        position={[0, 4.4, 0]}
+        position={[0, 4.6, 0]}
         center
-        distanceFactor={52}
+        distanceFactor={55}
         zIndexRange={[260, 140]}
       >
         <div

@@ -63,11 +63,11 @@ export default function SensorMarker3D({ sensor, onSelectSensor, isSelected }) {
         </mesh>
       )}
 
-      {/* Compact, Clean Marker Card — Matching Image 2 */}
+      {/* Compact, Clean Marker Card — Elevated for unobstructed isometric view */}
       <Html
-        position={[0, 2.8, 0]}
+        position={[0, 3.2, 0]}
         center
-        distanceFactor={52}
+        distanceFactor={55}
         zIndexRange={[180, 80]}
       >
         <div

@@ -10,48 +10,49 @@ import SensorMarker3D from './SensorMarker3D'
 import ThreatMarker3D from './ThreatMarker3D'
 import WildlifeModel3D from './WildlifeModel3D'
 
-// Camera Rig Helper to animate camera to specific presets (default isometric, top-down, zone focus)
+// Camera Rig Helper to animate camera to specific presets (elevated isometric, top-down, zone focus)
 function CameraController({ cameraTarget, isTopDown }) {
   const { camera } = useThree()
   const controlsRef = useRef()
 
   useEffect(() => {
     if (isTopDown) {
-      camera.position.set(0, 92, 0.01)
-      camera.lookAt(0, 2, 0)
+      camera.position.set(0, 115, 0.01)
+      camera.lookAt(0, 1.5, 0)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 2, 0)
+        controlsRef.current.target.set(0, 1.5, 0)
       }
     } else if (cameraTarget === 'zone-1') {
-      camera.position.set(-20, 36, 12)
-      camera.lookAt(-25, 6, -25)
+      camera.position.set(-26, 48, 16)
+      camera.lookAt(-25, 4, -25)
       if (controlsRef.current) {
-        controlsRef.current.target.set(-25, 6, -25)
+        controlsRef.current.target.set(-25, 4, -25)
       }
     } else if (cameraTarget === 'zone-2') {
-      camera.position.set(24, 34, 12)
-      camera.lookAt(25, 4, -25)
+      camera.position.set(28, 46, 16)
+      camera.lookAt(25, 3, -25)
       if (controlsRef.current) {
-        controlsRef.current.target.set(25, 4, -25)
+        controlsRef.current.target.set(25, 3, -25)
       }
     } else if (cameraTarget === 'zone-3') {
-      camera.position.set(-20, 34, 58)
-      camera.lookAt(-25, 4, 25)
+      camera.position.set(-26, 46, 64)
+      camera.lookAt(-25, 3, 25)
       if (controlsRef.current) {
-        controlsRef.current.target.set(-25, 4, 25)
+        controlsRef.current.target.set(-25, 3, 25)
       }
     } else if (cameraTarget === 'zone-4') {
-      camera.position.set(24, 34, 58)
-      camera.lookAt(25, 3, 25)
+      camera.position.set(28, 46, 64)
+      camera.lookAt(25, 2, 25)
       if (controlsRef.current) {
-        controlsRef.current.target.set(25, 3, 25)
+        controlsRef.current.target.set(25, 2, 25)
       }
     } else {
-      // Default elevated, oblique isometric overview of the entire reserve
-      camera.position.set(52, 48, 52)
-      camera.lookAt(0, 2, 0)
+      // Default elevated, oblique isometric overview (38-42° downward pitch)
+      // Reveals entire 3D raised diorama, winding river, and all sensors simultaneously without obstruction
+      camera.position.set(64, 76, 64)
+      camera.lookAt(0, 1.5, 0)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 2, 0)
+        controlsRef.current.target.set(0, 1.5, 0)
       }
     }
   }, [cameraTarget, isTopDown, camera])
@@ -59,13 +60,13 @@ function CameraController({ cameraTarget, isTopDown }) {
   return (
     <OrbitControls
       ref={controlsRef}
-      target={[0, 2, 0]}
+      target={[0, 1.5, 0]}
       enableDamping
       dampingFactor={0.06}
-      minDistance={18}
-      maxDistance={135}
-      maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.12}
-      minPolarAngle={0}
+      minDistance={22}
+      maxDistance={175}
+      maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.15}
+      minPolarAngle={0.05}
     />
   )
 }
@@ -146,7 +147,7 @@ export default function ForestCanvas({
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
         <Canvas
-          camera={{ position: [52, 48, 52], fov: 38, near: 0.5, far: 300 }}
+          camera={{ position: [64, 76, 64], fov: 36, near: 0.5, far: 450 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
