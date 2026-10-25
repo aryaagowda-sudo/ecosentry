@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Html, useTexture } from '@react-three/drei'
 import {
   WORLD_SIZE,
   HALF_SIZE,
@@ -11,6 +11,24 @@ import {
 } from './terrainHelper'
 
 export default function Terrain({ selectedZone, portal }) {
+  const groundMaps = useTexture({
+    map: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Color.jpg',
+    normalMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_NormalGL.jpg',
+    roughnessMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Roughness.jpg',
+    aoMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_AmbientOcclusion.jpg',
+    displacementMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Displacement.jpg'
+  })
+  Object.values(groundMaps).forEach((texture) => {
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(8, 8)
+    texture.colorSpace = THREE.SRGBColorSpace
+  })
+  groundMaps.normalMap.colorSpace = THREE.NoColorSpace
+  groundMaps.roughnessMap.colorSpace = THREE.NoColorSpace
+  groundMaps.aoMap.colorSpace = THREE.NoColorSpace
+  groundMaps.displacementMap.colorSpace = THREE.NoColorSpace
+
   // Generate the 3D Isometric Terrain Diorama:
   // 1. Top undulating surface with realistic hills, peaks, and river canyon
   // 2. Extruded vertical rock side skirts (North, South, East, West)
@@ -412,9 +430,12 @@ export default function Terrain({ selectedZone, portal }) {
       {/* 1. Main Realistic Undulating Terrain Surface */}
       <mesh geometry={topGeometry} receiveShadow castShadow>
         <meshStandardMaterial
+          {...groundMaps}
           vertexColors
-          roughness={0.82}
-          metalness={0.06}
+          color="#d7dfc6"
+          roughness={0.88}
+          metalness={0.02}
+          displacementScale={0.18}
           flatShading={false}
         />
       </mesh>

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Environment, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 import Terrain from './Terrain'
@@ -232,6 +232,7 @@ export default function ForestCanvas({
             color="#FFFDF5"
           />
           <hemisphereLight skyColor="#E7F3EA" groundColor="#78836F" intensity={0.78} />
+          <Environment files="/assets/hdri/polyhaven/forest_grove_1k.hdr" environmentIntensity={0.28} />
 
           {/* Interactive Camera Controller */}
           <CameraController

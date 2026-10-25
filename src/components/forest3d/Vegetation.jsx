@@ -9,11 +9,11 @@ import {
 import { INITIAL_SENSORS, INITIAL_EVENTS } from '../../data/mockData'
 
 const TREE_ASSETS = {
-  broadleaf: '/assets/forest/mature-english-oak.glb',
-  conifer: '/assets/forest/mature-norway-spruce.glb',
-  riparian: '/assets/forest/mature-common-alder.glb',
-  willow: '/assets/forest/mature-white-willow.glb',
-  shrub: '/assets/forest/young-hazel-shrub.glb'
+  broadleaf: '/assets/trees/polyhaven/jacaranda_tree.gltf',
+  conifer: '/assets/trees/polyhaven/island_tree_01.gltf',
+  riparian: '/assets/trees/polyhaven/jacaranda_tree.gltf',
+  willow: '/assets/trees/polyhaven/island_tree_01.gltf',
+  shrub: '/assets/trees/polyhaven/island_tree_01.gltf'
 }
 
 function prepareAsset(scene, targetHeight) {
