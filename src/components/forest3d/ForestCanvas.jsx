@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { Environment, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
 import Terrain from './Terrain'
@@ -55,11 +55,11 @@ function CameraController({ cameraTarget, isTopDown, cameraAction }) {
       // Default elevated 45° isometric viewpoint matching Reference Image 2
       // Camera at [-14, 118, 108] looking at [0, 1.5, -4] gives exact 45° downward pitch,
       // displaying Zone 1 at top-left, Zone 2 at top-right, Zone 3 at bottom-left, Zone 4 at bottom-right,
-      // with both the front and side cutaway sedimentary rock strata layers fully showcased.
-      camera.position.set(-14, 118, 108)
-      camera.lookAt(0, 1.5, -4)
+      // Keep the full raised slab visible while exposing the front and side strata layers.
+      camera.position.set(-18, 82, 122)
+      camera.lookAt(0, 0.5, -2)
       if (controlsRef.current) {
-        controlsRef.current.target.set(0, 1.5, -4)
+        controlsRef.current.target.set(0, 0.5, -2)
         controlsRef.current.update()
       }
     }
@@ -78,9 +78,9 @@ function CameraController({ cameraTarget, isTopDown, cameraAction }) {
       camera.position.copy(target).add(offset.multiplyScalar(1.24))
       controlsRef.current.update()
     } else if (cameraAction.type === 'reset') {
-      camera.position.set(-14, 118, 108)
-      camera.lookAt(0, 1.5, -4)
-      controlsRef.current.target.set(0, 1.5, -4)
+      camera.position.set(-18, 82, 122)
+      camera.lookAt(0, 0.5, -2)
+      controlsRef.current.target.set(0, 0.5, -2)
       controlsRef.current.update()
     }
   }, [cameraAction, camera])
@@ -191,25 +191,35 @@ export default function ForestCanvas({
 
   const showTrails = activeLayer === 'all' || activeLayer === 'wildlife'
   const showTrees = activeLayer !== 'threats'
+  const htmlPortalRef = useRef(null)
+  const [portalReady, setPortalReady] = useState(false)
 
   return (
     <WebGLErrorBoundary onSwitchTo2D={onSwitchTo2D}>
       <div className="forest-3d-canvas-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <Canvas
-          camera={{ position: [-14, 118, 108], fov: 38, near: 0.5, far: 500 }}
+        <div
+          ref={(node) => {
+            htmlPortalRef.current = node
+            if (node && !portalReady) setPortalReady(true)
+          }}
+          aria-hidden="true"
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 2 }}
+        />
+        {portalReady && <Canvas
+          camera={{ position: [-18, 82, 122], fov: 44, near: 0.5, far: 500 }}
           shadows
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           onCreated={({ gl, scene }) => {
-            gl.setClearColor(new THREE.Color('#CBD1CB'))
-            scene.fog = new THREE.FogExp2('#CBD1CB', 0.0022)
+            gl.setClearColor(new THREE.Color('#C8D1C9'))
+            scene.fog = new THREE.FogExp2('#C8D1C9', 0.0016)
           }}
         >
           {/* Natural Atmospheric Daylight Lighting */}
-          <ambientLight color="#EBF3EC" intensity={1.1} />
+          <ambientLight color="#EAF2EA" intensity={0.68} />
           <directionalLight
-            position={[45, 62, 38]}
-            intensity={1.5}
+            position={[38, 76, 30]}
+            intensity={1.72}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
@@ -221,7 +231,8 @@ export default function ForestCanvas({
             shadow-camera-bottom={-60}
             color="#FFFDF5"
           />
-          <hemisphereLight skyColor="#E2EFE4" groundColor="#CADACA" intensity={0.65} />
+          <hemisphereLight skyColor="#E7F3EA" groundColor="#78836F" intensity={0.78} />
+          <Environment files="/assets/hdri/polyhaven/forest_grove_1k.hdr" environmentIntensity={0.28} />
 
           {/* Interactive Camera Controller */}
           <CameraController
@@ -233,7 +244,7 @@ export default function ForestCanvas({
           {/* 3D Forest World */}
           <group>
             {/* 1. Procedural Undulating Terrain with River & Zone Borders */}
-            <Terrain selectedZone={selectedZone} />
+            <Terrain selectedZone={selectedZone} portal={htmlPortalRef} />
 
             {/* 2. Optimized Instanced Trees */}
             {showTrees && <Vegetation />}
@@ -248,6 +259,7 @@ export default function ForestCanvas({
                 sensor={sensor}
                 isSelected={sensor.id === selectedMarkerId}
                 onSelectSensor={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
 
@@ -258,6 +270,7 @@ export default function ForestCanvas({
                 event={evt}
                 isSelected={evt.id === selectedMarkerId}
                 onSelectEvent={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
 
@@ -268,10 +281,11 @@ export default function ForestCanvas({
                 event={evt}
                 isSelected={evt.id === selectedMarkerId}
                 onSelectWildlife={onSelectMarker}
+                portal={htmlPortalRef}
               />
             ))}
           </group>
-        </Canvas>
+        </Canvas>}
       </div>
     </WebGLErrorBoundary>
   )

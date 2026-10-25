@@ -31,8 +31,8 @@ export default function ThreatAlertsPanel({
 
   // Apply Multi-Criteria Filters
   const filteredAlerts = events.filter((evt) => {
-    // Exclude benign wildlife sightings from the threat panel
-    if (evt.category === 'wildlife') return false
+    // Keep the response queue focused on incidents; hardware telemetry is surfaced in Sensor Health.
+    if (evt.category !== 'threat') return false
 
     // Filter by Event Type
     if (typeFilter !== 'all' && evt.type !== typeFilter) return false

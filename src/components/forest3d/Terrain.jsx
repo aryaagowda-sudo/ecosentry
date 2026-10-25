@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Html, useTexture } from '@react-three/drei'
 import {
   WORLD_SIZE,
   HALF_SIZE,
@@ -10,7 +10,21 @@ import {
   getRiverCenterlineX
 } from './terrainHelper'
 
-export default function Terrain({ selectedZone }) {
+export default function Terrain({ selectedZone, portal }) {
+  const groundMaps = useTexture({
+    map: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Color.jpg',
+    normalMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_NormalGL.jpg',
+    roughnessMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Roughness.jpg'
+  })
+  Object.values(groundMaps).forEach((texture) => {
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(8, 8)
+    texture.colorSpace = THREE.SRGBColorSpace
+  })
+  groundMaps.normalMap.colorSpace = THREE.NoColorSpace
+  groundMaps.roughnessMap.colorSpace = THREE.NoColorSpace
+
   // Generate the 3D Isometric Terrain Diorama:
   // 1. Top undulating surface with realistic hills, peaks, and river canyon
   // 2. Extruded vertical rock side skirts (North, South, East, West)
@@ -36,13 +50,16 @@ export default function Terrain({ selectedZone }) {
       const distFromRiver = Math.abs(x - riverX)
 
       const color = new THREE.Color()
+      const moisture = Math.max(0, 1 - distFromRiver / 12)
+      const elevationShade = THREE.MathUtils.clamp((y - 2.5) / 12, 0, 1)
+      const floorVariation = (Math.sin(x * 0.31 + z * 0.17) + Math.cos(x * 0.13 - z * 0.27)) * 0.012
 
       if (distFromRiver < 4.2) {
         // Riverbed & wet shoreline: dark pebble & moist earth
         color.setRGB(0.18, 0.22, 0.17)
       } else if (distFromRiver < 7.5) {
         // Riparian zone: lush river meadow green
-        color.setRGB(0.20, 0.38, 0.22)
+        color.setRGB(0.24, 0.42, 0.25)
       } else if (y > 9.5) {
         // High mountain peaks / exposed ridges: rugged rocky stone with moss
         const rockMix = Math.min(1, (y - 9.5) / 3.5)
@@ -53,10 +70,10 @@ export default function Terrain({ selectedZone }) {
         // Forest terrain: rich natural canopy greens with zone-specific nuances
         if (x <= 0 && z <= 0) {
           // Zone 1: Dense North Canopy (rich dark emerald forest)
-          color.setRGB(0.12 + (y * 0.008), 0.32 + (y * 0.012), 0.16 + (y * 0.006))
+          color.setRGB(0.14 + elevationShade * 0.045 + floorVariation, 0.32 + elevationShade * 0.075 + floorVariation, 0.17 + elevationShade * 0.035 + floorVariation * 0.5)
         } else if (x > 0 && z <= 0) {
           // Zone 2: East River Basin (wetland & delta green)
-          color.setRGB(0.14 + (y * 0.008), 0.34 + (y * 0.010), 0.20 + (y * 0.008))
+          color.setRGB(0.16 + moisture * 0.025 + floorVariation, 0.35 + moisture * 0.06 + floorVariation, 0.21 + moisture * 0.045 + floorVariation * 0.6)
         } else if (x <= 0 && z > 0) {
           // Zone 3: South Wildlife Corridor (deep migration forest)
           color.setRGB(0.13 + (y * 0.008), 0.30 + (y * 0.011), 0.15 + (y * 0.006))
@@ -209,9 +226,9 @@ export default function Terrain({ selectedZone }) {
           const currX1 = centerX + normOffset1 * width
           const currGround0 = getTerrainElevation(currX0, z)
           const currGround1 = getTerrainElevation(currX1, z)
-          // Crown profile: +0.24 above center bed, +0.14 at riverbank edges
-          const currCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
-          const currCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          // Keep the water inside the carved channel while retaining a subtle reflective crown.
+          const currCrown0 = 0.08 - Math.abs(normOffset0) * 0.03
+          const currCrown1 = 0.08 - Math.abs(normOffset1) * 0.03
           const currY0 = currGround0 + currCrown0
           const currY1 = currGround1 + currCrown1
 
@@ -220,8 +237,8 @@ export default function Terrain({ selectedZone }) {
           const prevX1 = prevCenterX + normOffset1 * prevWidth
           const prevGround0 = getTerrainElevation(prevX0, prevZ)
           const prevGround1 = getTerrainElevation(prevX1, prevZ)
-          const prevCrown0 = 0.24 - Math.abs(normOffset0) * 0.20
-          const prevCrown1 = 0.24 - Math.abs(normOffset1) * 0.20
+          const prevCrown0 = 0.08 - Math.abs(normOffset0) * 0.03
+          const prevCrown1 = 0.08 - Math.abs(normOffset1) * 0.03
           const prevY0 = prevGround0 + prevCrown0
           const prevY1 = prevGround1 + prevCrown1
 
@@ -409,9 +426,11 @@ export default function Terrain({ selectedZone }) {
       {/* 1. Main Realistic Undulating Terrain Surface */}
       <mesh geometry={topGeometry} receiveShadow castShadow>
         <meshStandardMaterial
+          {...groundMaps}
           vertexColors
-          roughness={0.82}
-          metalness={0.06}
+          color="#d7dfc6"
+          roughness={0.88}
+          metalness={0.02}
           flatShading={false}
         />
       </mesh>
@@ -420,9 +439,10 @@ export default function Terrain({ selectedZone }) {
       <mesh geometry={skirtGeometry} receiveShadow>
         <meshStandardMaterial
           map={rockStrataTexture}
-          roughness={0.88}
-          metalness={0.08}
+          roughness={0.98}
+          metalness={0.01}
           flatShading={false}
+          color="#9b876f"
         />
       </mesh>
 
@@ -435,11 +455,11 @@ export default function Terrain({ selectedZone }) {
       <mesh geometry={riverGeometry} receiveShadow>
         <meshStandardMaterial
           map={waterTexture}
-          color="#268fa8"
-          roughness={0.16}
-          metalness={0.32}
+          color="#3a8990"
+          roughness={0.18}
+          metalness={0.08}
           transparent
-          opacity={0.94}
+          opacity={0.86}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -482,6 +502,7 @@ export default function Terrain({ selectedZone }) {
 
       {/* 7. Clean, Minimalist White Zone Pills Matching Image 2 */}
       <Html
+          portal={portal}
         key="zone-badge-1"
         position={[-22, getTerrainElevation(-22, -26) + 4.2, -26]}
         center
@@ -495,6 +516,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-2"
         position={[26, getTerrainElevation(26, -24) + 4.2, -24]}
         center
@@ -508,6 +530,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-3"
         position={[-24, getTerrainElevation(-24, 24) + 4.2, 24]}
         center
@@ -521,6 +544,7 @@ export default function Terrain({ selectedZone }) {
       </Html>
 
       <Html
+          portal={portal}
         key="zone-badge-4"
         position={[26, getTerrainElevation(26, 24) + 4.2, 24]}
         center
