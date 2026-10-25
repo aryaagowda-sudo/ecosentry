@@ -14,9 +14,7 @@ export default function Terrain({ selectedZone, portal }) {
   const groundMaps = useTexture({
     map: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Color.jpg',
     normalMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_NormalGL.jpg',
-    roughnessMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Roughness.jpg',
-    aoMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_AmbientOcclusion.jpg',
-    displacementMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Displacement.jpg'
+    roughnessMap: '/assets/textures/forest-floor/ambientcg/Ground037_1K-JPG_Roughness.jpg'
   })
   Object.values(groundMaps).forEach((texture) => {
     texture.wrapS = THREE.RepeatWrapping
@@ -26,8 +24,6 @@ export default function Terrain({ selectedZone, portal }) {
   })
   groundMaps.normalMap.colorSpace = THREE.NoColorSpace
   groundMaps.roughnessMap.colorSpace = THREE.NoColorSpace
-  groundMaps.aoMap.colorSpace = THREE.NoColorSpace
-  groundMaps.displacementMap.colorSpace = THREE.NoColorSpace
 
   // Generate the 3D Isometric Terrain Diorama:
   // 1. Top undulating surface with realistic hills, peaks, and river canyon
@@ -435,7 +431,6 @@ export default function Terrain({ selectedZone, portal }) {
           color="#d7dfc6"
           roughness={0.88}
           metalness={0.02}
-          displacementScale={0.18}
           flatShading={false}
         />
       </mesh>
