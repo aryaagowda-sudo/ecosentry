@@ -9,8 +9,8 @@ import {
   Box,
   Map as MapIcon,
   Check,
-  PanelRightOpen,
-  PanelRightClose,
+  PanelLeftOpen,
+  PanelLeftClose,
   GripVertical,
   Move
 } from 'lucide-react'
@@ -300,9 +300,9 @@ export default function ForestMapContainer({
           <button
             className={`toolbox-header-toggle-btn ${isToolboxOpen ? 'active' : ''}`}
             onClick={() => setIsToolboxOpen(!isToolboxOpen)}
-            title={isToolboxOpen ? 'Hide Incident Toolbox' : 'Open Incident Toolbox'}
+            title={isToolboxOpen ? 'Collapse Incident Toolbox' : 'Expand Incident Toolbox'}
           >
-            {isToolboxOpen ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
+            {isToolboxOpen ? <PanelLeftClose size={13} /> : <PanelLeftOpen size={13} />}
             <span>Incident Toolbox</span>
             <span className="toolbox-toggle-pill">14+</span>
           </button>
@@ -323,8 +323,18 @@ export default function ForestMapContainer({
         </div>
       </div>
 
-      {/* 3. MAIN WORKSPACE: 3D Forest Canvas + Collapsible Incident Toolbox */}
+      {/* 3. MAIN WORKSPACE: Incident Toolbox (Left) + 3D Forest Canvas (Right) */}
       <div className="map-workspace-split">
+        {/* Dedicated Incident Toolbox Sidebar immediately to the LEFT of the 3D map */}
+        <IncidentToolbox
+          isOpen={isToolboxOpen}
+          onToggle={() => setIsToolboxOpen(!isToolboxOpen)}
+          onStartDrag={handleStartDrag}
+          customItems={customToolboxItems}
+          onAddCustomItem={onAddCustomToolboxItem}
+          onDeleteCustomItem={onDeleteCustomToolboxItem}
+        />
+
         {/* VIEWPORT: 3D Canvas or 2D Satellite View */}
         {viewMode === '3d' ? (
           <div className="map-canvas-container">
@@ -440,29 +450,21 @@ export default function ForestMapContainer({
           </div>
         ) : (
           /* Preserved 2D Satellite / Tactical View with Clean GIS Representation & Flowing River */
-          <SimulatedForestMap
-            zones={zones}
-            trails={trails}
-            sensors={sensors}
-            events={events}
-            selectedZone={selectedZone}
-            setSelectedZone={setSelectedZone}
-            selectedItem={selectedItem}
-            onSelectMarker={onSelectMarker}
-            activeLayer={visibleLayers.incidents ? 'threats' : 'all'}
-            onSwitchTo3D={() => setViewMode('3d')}
-          />
+          <div className="map-canvas-container">
+            <SimulatedForestMap
+              zones={zones}
+              trails={trails}
+              sensors={sensors}
+              events={events}
+              selectedZone={selectedZone}
+              setSelectedZone={setSelectedZone}
+              selectedItem={selectedItem}
+              onSelectMarker={onSelectMarker}
+              activeLayer={visibleLayers.incidents ? 'threats' : 'all'}
+              onSwitchTo3D={() => setViewMode('3d')}
+            />
+          </div>
         )}
-
-        {/* 4. Collapsible Incident Toolbox Beside the 3D Forest Map */}
-        <IncidentToolbox
-          isOpen={isToolboxOpen}
-          onToggle={() => setIsToolboxOpen(!isToolboxOpen)}
-          onStartDrag={handleStartDrag}
-          customItems={customToolboxItems}
-          onAddCustomItem={onAddCustomToolboxItem}
-          onDeleteCustomItem={onDeleteCustomToolboxItem}
-        />
       </div>
 
       {/* 5. Floating Cursor Drag Preview (Follows mouse across UI during drag) */}

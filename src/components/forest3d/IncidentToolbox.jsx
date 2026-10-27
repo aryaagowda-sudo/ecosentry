@@ -111,7 +111,7 @@ export default function IncidentToolbox({
             <span className="tab-dot" />
             <span className="tab-vertical-text">INCIDENT TOOLBOX</span>
           </div>
-          <ChevronLeft size={14} className="tab-chevron" />
+          <ChevronRight size={14} className="tab-chevron" />
         </button>
       )}
 
@@ -131,7 +131,7 @@ export default function IncidentToolbox({
               title="Collapse Incident Toolbox"
               aria-label="Collapse Incident Toolbox"
             >
-              <ChevronRight size={15} />
+              <ChevronLeft size={15} />
             </button>
           </div>
 
@@ -260,6 +260,19 @@ export default function IncidentToolbox({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Dedicated Custom Event Footer Button */}
+          <div className="toolbox-panel-footer">
+            <button
+              type="button"
+              className="btn-add-custom-event"
+              onClick={() => setShowCustomModal(true)}
+              title="Define and add a custom event type"
+            >
+              <Plus size={13} />
+              <span>Create Custom Event</span>
+            </button>
           </div>
         </div>
       )}
