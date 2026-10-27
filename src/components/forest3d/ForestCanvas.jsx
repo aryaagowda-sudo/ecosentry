@@ -9,11 +9,29 @@ import AnimalTrails3D from './AnimalTrails3D'
 import SensorMarker3D from './SensorMarker3D'
 import ThreatMarker3D from './ThreatMarker3D'
 import WildlifeModel3D from './WildlifeModel3D'
+import DragPlacementController from './DragPlacementController'
 
 // Camera Rig Helper to animate camera to specific presets (elevated isometric, top-down, zone focus, and toolbar actions)
-function CameraController({ cameraTarget, isTopDown, cameraAction }) {
+function CameraController({ cameraTarget, isTopDown, cameraAction, isDragging, focusTarget }) {
   const { camera } = useThree()
   const controlsRef = useRef()
+
+  // Enable/disable orbit controls during active drag placement
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.enabled = !isDragging
+    }
+  }, [isDragging])
+
+  // Focus on specific coordinates when "Locate in 3D" is triggered
+  useEffect(() => {
+    if (!focusTarget || !controlsRef.current) return
+    const [tx, ty, tz] = focusTarget
+    camera.position.set(tx + 8, ty + 42, tz + 48)
+    camera.lookAt(tx, ty, tz)
+    controlsRef.current.target.set(tx, ty, tz)
+    controlsRef.current.update()
+  }, [focusTarget, camera])
 
   useEffect(() => {
     if (isTopDown) {
@@ -147,22 +165,31 @@ export default function ForestCanvas({
   isTopDown,
   selectedMarkerId,
   onSelectMarker,
-  onSwitchTo2D
+  onSwitchTo2D,
+  draggingItem,
+  dragPointerPos,
+  onTerrainHitChange,
+  onStartReposition,
+  focusTarget
 }) {
-  // Filter threat events based on layers & zone (Only unacknowledged active threats matching Image 2)
-  const threatEvents = events.filter((evt) => {
-    if (evt.category !== 'threat') return false
-    if (evt.status !== 'active') return false // Only active critical alerts get red incident pins ("1 · MIC-01", "2 · MIC-04")
+  const terrainMeshRef = useRef()
+
+  // Filter threat events & manual incidents based on layers & zone
+  const visibleIncidentEvents = events.filter((evt) => {
     if (selectedZone !== 'all' && evt.zoneId !== selectedZone) return false
     if (visibleLayers && visibleLayers.incidents === false) return false
-    if (activeLayer === 'cameras' || activeLayer === 'acoustics' || activeLayer === 'wildlife') return false
-    return true
+    if (activeLayer === 'cameras' || activeLayer === 'acoustics') return false
+    // Always render manually placed incidents unless specifically filtered
+    if (evt.isManual) return true
+    // Render automated active threats ("1 · MIC-01", "2 · MIC-04")
+    if (evt.category === 'threat' && evt.status === 'active') return true
+    return false
   })
 
   // Set of sensor IDs that currently have an active incident pin rendered.
-  // We suppress the duplicate sensor marker at the exact same location so only the coral-red incident pin shows.
+  // We suppress the duplicate sensor marker at the exact same location so only the incident pin shows.
   const activeIncidentSensorIds = new Set(
-    threatEvents.filter((e) => e.sensorId).map((e) => e.sensorId)
+    visibleIncidentEvents.filter((e) => e.sensorId).map((e) => e.sensorId)
   )
 
   // Filter visible sensors according to active layers, selected zone, and incident deduplication
@@ -228,12 +255,14 @@ export default function ForestCanvas({
             cameraTarget={selectedZone}
             isTopDown={isTopDown}
             cameraAction={cameraAction}
+            isDragging={!!draggingItem}
+            focusTarget={focusTarget}
           />
 
           {/* 3D Forest World */}
           <group>
             {/* 1. Procedural Undulating Terrain with River & Zone Borders */}
-            <Terrain selectedZone={selectedZone} />
+            <Terrain selectedZone={selectedZone} terrainMeshRef={terrainMeshRef} />
 
             {/* 2. Optimized Instanced Trees */}
             {showTrees && <Vegetation />}
@@ -251,13 +280,14 @@ export default function ForestCanvas({
               />
             ))}
 
-            {/* 5. Threat Incidents (Pulsing Beacons) */}
-            {threatEvents.map((evt) => (
+            {/* 5. Incident Markers (Automated & Manually Placed) */}
+            {visibleIncidentEvents.map((evt) => (
               <ThreatMarker3D
                 key={evt.id}
                 event={evt}
                 isSelected={evt.id === selectedMarkerId}
                 onSelectEvent={onSelectMarker}
+                onStartReposition={onStartReposition}
               />
             ))}
 
@@ -270,6 +300,14 @@ export default function ForestCanvas({
                 onSelectWildlife={onSelectMarker}
               />
             ))}
+
+            {/* 7. Real-Time 3D Drag Placement Raycast Controller & Ghost Marker */}
+            <DragPlacementController
+              draggingItem={draggingItem}
+              dragPointerPos={dragPointerPos}
+              terrainMeshRef={terrainMeshRef}
+              onTerrainHitChange={onTerrainHitChange}
+            />
           </group>
         </Canvas>
       </div>

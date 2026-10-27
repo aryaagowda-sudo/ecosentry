@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Download, AlertTriangle, ShieldCheck } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import TopNav from './components/TopNav'
@@ -30,11 +30,59 @@ import './App.css'
 export default function App() {
   // Centralized Application State
   const [sensors, setSensors] = useState(INITIAL_SENSORS)
-  const [events, setEvents] = useState(INITIAL_EVENTS)
+  
+  // Persisted Events State with localStorage
+  const [events, setEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ecosentry_events')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved events:', e)
+    }
+    return INITIAL_EVENTS
+  })
+
+  // Persisted Custom Toolbox Incident Types
+  const [customToolboxItems, setCustomToolboxItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ecosentry_custom_event_types')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch (e) {
+      console.warn('Failed to parse custom event types:', e)
+    }
+    return []
+  })
+
   const [activeNav, setActiveNav] = useState('overview') // 'overview', 'map', 'threats', 'history', 'sensors', 'wildlife', 'analytics', 'settings'
   const [selectedZone, setSelectedZone] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedItem, setSelectedItem] = useState(null) // Modal / inspector item
+  const [repositionTarget, setRepositionTarget] = useState(null) // Incident being moved on map
+  const [focusTarget, setFocusTarget] = useState(null) // 3D Camera target for "View in 3D"
+
+  // Persist events to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ecosentry_events', JSON.stringify(events))
+    } catch (e) {
+      console.warn('Failed to save events:', e)
+    }
+  }, [events])
+
+  // Persist custom toolbox templates to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ecosentry_custom_event_types', JSON.stringify(customToolboxItems))
+    } catch (e) {
+      console.warn('Failed to save custom event types:', e)
+    }
+  }, [customToolboxItems])
 
   // Calculate dynamic statistics strictly from current state (no hardcoding)
   const stats = useMemo(() => {
@@ -141,7 +189,94 @@ export default function App() {
     if (alertItem.zoneId) {
       setSelectedZone(alertItem.zoneId)
     }
+    if (alertItem.coordinates) {
+      setFocusTarget({
+        x: alertItem.coordinates.x,
+        y: alertItem.coordinates.y,
+        id: alertItem.id,
+        timestamp: Date.now()
+      })
+    }
     setSelectedItem({ itemType: 'event', data: alertItem })
+  }
+
+  // Incident Placement Handlers (Drag-and-Drop system)
+  const handleAddIncident = (newIncident) => {
+    setEvents((prev) => [newIncident, ...prev])
+  }
+
+  const handleEditIncident = (updatedIncident) => {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === updatedIncident.id ? { ...e, ...updatedIncident } : e))
+    )
+    if (selectedItem?.data?.id === updatedIncident.id) {
+      setSelectedItem({
+        itemType: 'event',
+        data: { ...selectedItem.data, ...updatedIncident }
+      })
+    }
+  }
+
+  const handleRepositionIncident = (eventId, newCoords) => {
+    setEvents((prev) =>
+      prev.map((e) => {
+        if (e.id !== eventId) return e
+        return {
+          ...e,
+          zoneId: newCoords.zoneId,
+          zoneName: newCoords.zoneName,
+          coordinates: {
+            ...e.coordinates,
+            x: newCoords.x,
+            y: newCoords.y,
+            simulatedLat: newCoords.simulatedLat,
+            simulatedLng: newCoords.simulatedLng
+          }
+        }
+      })
+    )
+    if (selectedItem?.data?.id === eventId) {
+      setSelectedItem((prev) => {
+        if (!prev) return null
+        return {
+          ...prev,
+          data: {
+            ...prev.data,
+            zoneId: newCoords.zoneId,
+            zoneName: newCoords.zoneName,
+            coordinates: {
+              ...prev.data.coordinates,
+              x: newCoords.x,
+              y: newCoords.y,
+              simulatedLat: newCoords.simulatedLat,
+              simulatedLng: newCoords.simulatedLng
+            }
+          }
+        }
+      })
+    }
+  }
+
+  const handleDeleteIncident = (eventId) => {
+    setEvents((prev) => prev.filter((e) => e.id !== eventId))
+    if (selectedItem?.data?.id === eventId) {
+      setSelectedItem(null)
+    }
+  }
+
+  const handleAddCustomToolboxItem = (item) => {
+    setCustomToolboxItems((prev) => [item, ...prev])
+  }
+
+  const handleDeleteCustomToolboxItem = (itemId) => {
+    setCustomToolboxItems((prev) => prev.filter((it) => it.id !== itemId))
+  }
+
+  const handleStartRepositionFromModal = (eventData) => {
+    if (activeNav !== 'overview' && activeNav !== 'map') {
+      setActiveNav('overview')
+    }
+    setRepositionTarget(eventData)
   }
 
   // Export summary action (downloads reserve operations audit JSON)
@@ -247,6 +382,14 @@ export default function App() {
                   setSelectedZone={setSelectedZone}
                   selectedItem={selectedItem}
                   onSelectMarker={handleSelectMarker}
+                  onAddIncident={handleAddIncident}
+                  onRepositionIncident={handleRepositionIncident}
+                  customToolboxItems={customToolboxItems}
+                  onAddCustomToolboxItem={handleAddCustomToolboxItem}
+                  onDeleteCustomToolboxItem={handleDeleteCustomToolboxItem}
+                  focusTarget={focusTarget}
+                  repositionTarget={repositionTarget}
+                  onClearRepositionTarget={() => setRepositionTarget(null)}
                 />
 
                 <ThreatAlertsPanel
@@ -308,6 +451,14 @@ export default function App() {
                 selectedItem={selectedItem}
                 onSelectMarker={handleSelectMarker}
                 isDedicatedPage={true}
+                onAddIncident={handleAddIncident}
+                onRepositionIncident={handleRepositionIncident}
+                customToolboxItems={customToolboxItems}
+                onAddCustomToolboxItem={handleAddCustomToolboxItem}
+                onDeleteCustomToolboxItem={handleDeleteCustomToolboxItem}
+                focusTarget={focusTarget}
+                repositionTarget={repositionTarget}
+                onClearRepositionTarget={() => setRepositionTarget(null)}
               />
             </div>
           )}
@@ -393,6 +544,9 @@ export default function App() {
         onAcknowledge={handleAcknowledge}
         onResolve={handleResolve}
         onToggleSensor={handleToggleSensor}
+        onRepositionEvent={handleStartRepositionFromModal}
+        onEditEvent={handleEditIncident}
+        onDeleteEvent={handleDeleteIncident}
       />
     </div>
   )

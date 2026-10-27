@@ -1,31 +1,28 @@
 import React, { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
-import { ShieldAlert, Volume2, Flame, User, Footprints, AlertTriangle } from 'lucide-react'
+import { ShieldAlert, Volume2, Flame, User, Footprints, AlertTriangle, Move, Activity } from 'lucide-react'
 import { gridToWorld, getSensorDisplayTag } from './terrainHelper'
+import { SEVERITY_LEVELS } from '../../data/toolboxEvents'
 
-export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
+export default function ThreatMarker3D({ event, onSelectEvent, isSelected, onStartReposition }) {
   const ringRef = useRef()
   const [hovered, setHovered] = useState(false)
   
-  // Calculate world coordinates grounded directly at the event/sensor point
+  // Calculate world coordinates grounded directly at the event point
   const [worldX, worldY, worldZ] = gridToWorld(
     event.coordinates.x,
     event.coordinates.y
   )
 
-  const isCritical = event.priority === 'critical'
-  const isHigh = event.priority === 'high'
   const isResolved = event.status === 'resolved'
+  const isAcknowledged = event.status === 'acknowledged'
   const activeHighlight = hovered || isSelected
 
-  const accentColor = isResolved
-    ? '#829286'
-    : isCritical
-    ? '#C94232'
-    : isHigh
-    ? '#B77A20'
-    : '#2B6888'
+  // Dynamic accent color based on priority/severity
+  const severityObj = SEVERITY_LEVELS.find((s) => s.id === event.priority)
+  const baseColor = severityObj?.color || '#C94232'
+  const accentColor = isResolved ? '#829286' : baseColor
 
   // Animate pulse ring
   useFrame((state, delta) => {
@@ -36,8 +33,12 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
     }
   })
 
-  // Select appropriate Lucide icon
-  const getIcon = () => {
+  // Select appropriate icon / emoji
+  const renderIcon = () => {
+    if (event.icon) {
+      // If emoji or custom icon string
+      return <span className="marker-emoji-icon">{event.icon}</span>
+    }
     const size = 11
     switch (event.type) {
       case 'chainsaw_sound':
@@ -48,13 +49,19 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
         return <User size={size} style={{ color: '#FFFFFF' }} />
       case 'animal_boundary_crossing':
         return <Footprints size={size} style={{ color: '#FFFFFF' }} />
+      case 'injured_animal':
+      case 'animal_distress':
+        return <Activity size={size} style={{ color: '#FFFFFF' }} />
       default:
         return <ShieldAlert size={size} style={{ color: '#FFFFFF' }} />
     }
   }
 
-  // Display label matching Reference Image 2: "1 · MIC-01" or "2 · MIC-04"
+  // Display label: Manual title vs automated sensor incident ("1 · MIC-01")
   const getIncidentLabel = () => {
+    if (event.isManual) {
+      return event.title
+    }
     let num = '1'
     if (event.id === 'EVT-2026-102' || event.sensorId === 'AC-W01') num = '2'
     else if (event.id === 'EVT-2026-103') num = '3'
@@ -78,7 +85,7 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
           <meshBasicMaterial
             color={accentColor}
             transparent
-            opacity={isCritical ? 0.75 : 0.55}
+            opacity={event.priority === 'critical' ? 0.75 : 0.55}
             side={2}
           />
         </mesh>
@@ -91,12 +98,12 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
           <meshBasicMaterial
             color={accentColor}
             transparent
-            opacity={isCritical ? 0.35 : 0.2}
+            opacity={event.priority === 'critical' ? 0.35 : 0.2}
           />
         </mesh>
       )}
 
-      {/* 3. Solid Coral-Red Pill Tag Matching Image 2 ("1 · MIC-01", "2 · MIC-04") */}
+      {/* 3. Solid Pill Tag (Severity themed, matching Image 2 for automated, custom-styled for manual) */}
       <Html
         position={[0, 4.2, 0]}
         center
@@ -104,7 +111,14 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
         zIndexRange={[260, 140]}
       >
         <div
-          className={`compact-threat-tag ${event.priority} ${event.status} ${activeHighlight ? 'selected' : ''}`}
+          className={`compact-threat-tag ${event.priority} ${event.status} ${
+            event.isManual ? 'manual-incident' : ''
+          } ${activeHighlight ? 'selected' : ''}`}
+          style={
+            event.isManual && !isResolved
+              ? { backgroundColor: accentColor, borderColor: `${accentColor}DD` }
+              : undefined
+          }
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           onClick={(e) => {
@@ -113,22 +127,39 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
           }}
           title={`${event.title} (${event.id}) • Click to inspect incident`}
         >
-          <div className="threat-tag-icon">{getIcon()}</div>
+          <div className="threat-tag-icon">{renderIcon()}</div>
           <span className="threat-tag-text">{getIncidentLabel()}</span>
 
           {/* Expanded tooltip on hover/select */}
           {activeHighlight && (
             <div className="tag-hover-tooltip threat">
-              <div className="tooltip-title">{event.title}</div>
+              <div className="tooltip-title">
+                {event.icon && <span style={{ marginRight: 4 }}>{event.icon}</span>}
+                {event.title}
+              </div>
               <div className="tooltip-meta">
                 <span>ID: {event.id}</span>
                 <span>•</span>
-                <span>
-                  {event.confidence ? `${Math.round(event.confidence * 100)}% match` : 'Hardware'}
-                </span>
+                <span style={{ textTransform: 'uppercase' }}>{event.priority}</span>
                 <span>•</span>
                 <span style={{ textTransform: 'uppercase' }}>{event.status}</span>
               </div>
+              <div className="tooltip-location-hint">
+                Sector: {event.zoneName}
+              </div>
+              {event.isManual && onStartReposition && (
+                <button
+                  className="btn-tooltip-reposition"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onStartReposition(event)
+                  }}
+                  title="Move marker to new position on map"
+                >
+                  <Move size={10} />
+                  <span>Reposition on terrain</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -136,3 +167,4 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected }) {
     </group>
   )
 }
+

@@ -277,3 +277,34 @@ export function getSensorDisplayTag(id) {
   }
   return map[id] || id.replace('AC-', 'MIC-')
 }
+
+/**
+ * Determine the forest reserve zone from 0-100 grid coordinates
+ */
+export function getZoneFromGridCoords(x, y) {
+  if (x <= 50 && y <= 50) {
+    return { id: 'zone-1', name: 'Zone 1: North Canopy Reserve', code: 'NCR-Z1' }
+  }
+  if (x > 50 && y <= 50) {
+    return { id: 'zone-2', name: 'Zone 2: East River Basin', code: 'ERB-Z2' }
+  }
+  if (x <= 50 && y > 50) {
+    return { id: 'zone-3', name: 'Zone 3: South Wildlife Corridor', code: 'SWC-Z3' }
+  }
+  return { id: 'zone-4', name: 'Zone 4: West Buffer Zone', code: 'WBZ-Z4' }
+}
+
+/**
+ * Convert 0-100 simulated grid coordinates into simulated GPS Latitude/Longitude
+ */
+export function gridToSimulatedLatLng(x, y) {
+  // Northern boundary is y=0 (~12.478°N), Southern boundary is y=100 (~12.420°N)
+  // Western boundary is x=0 (~76.105°E), Eastern boundary is x=100 (~76.175°E)
+  const lat = 12.478 - (y / 100) * 0.058
+  const lng = 76.105 + (x / 100) * 0.070
+  return {
+    simulatedLat: Number(lat.toFixed(4)),
+    simulatedLng: Number(lng.toFixed(4))
+  }
+}
+

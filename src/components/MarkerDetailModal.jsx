@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   X,
   MapPin,
@@ -12,9 +12,10 @@ import {
   AlertTriangle,
   Info,
   Power,
-  Battery,
-  BatteryCharging,
-  Wifi
+  Move,
+  Edit2,
+  Trash2,
+  Save
 } from 'lucide-react'
 
 export default function MarkerDetailModal({
@@ -22,11 +23,43 @@ export default function MarkerDetailModal({
   onClose,
   onAcknowledge,
   onResolve,
-  onToggleSensor
+  onToggleSensor,
+  onRepositionEvent,
+  onEditEvent,
+  onDeleteEvent
 }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editPriority, setEditPriority] = useState('high')
+  const [editStatus, setEditStatus] = useState('active')
+
   if (!selectedItem) return null
 
   const { itemType, data } = selectedItem
+
+  const startEditing = () => {
+    setEditTitle(data.title || '')
+    setEditDescription(data.description || '')
+    setEditPriority(data.priority || 'high')
+    setEditStatus(data.status || 'active')
+    setIsEditing(true)
+  }
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault()
+    if (!editTitle.trim()) return
+
+    onEditEvent?.({
+      ...data,
+      title: editTitle.trim(),
+      description: editDescription.trim(),
+      priority: editPriority,
+      status: editStatus
+    })
+    setIsEditing(false)
+    onClose()
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -35,7 +68,9 @@ export default function MarkerDetailModal({
         <div className="modal-dialog-header">
           <div className="modal-dialog-title">
             {itemType === 'event' ? (
-              data.category === 'threat' ? (
+              data.icon ? (
+                <span className="modal-title-emoji">{data.icon}</span>
+              ) : data.category === 'threat' ? (
                 <ShieldAlert size={18} style={{ color: 'var(--accent-red)' }} />
               ) : (
                 <Activity size={18} style={{ color: 'var(--accent-purple)' }} />
@@ -56,83 +91,170 @@ export default function MarkerDetailModal({
         <div className="modal-dialog-body">
           {itemType === 'event' ? (
             <>
-              {/* Event Status Badges */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span className={`status-tag ${data.priority}`}>
-                  {data.priority.toUpperCase()} PRIORITY
-                </span>
-                <span className={`status-tag ${data.status}`}>
-                  STATUS: {data.status.toUpperCase()}
-                </span>
-                <span
-                  className="status-tag"
-                  style={{
-                    backgroundColor: 'var(--bg-surface)',
-                    border: '1px solid var(--border-standard)',
-                    color: 'var(--text-muted)'
-                  }}
-                >
-                  SIMULATED PROTOTYPE EVENT
-                </span>
-              </div>
+              {isEditing ? (
+                /* Inline Edit Form */
+                <form onSubmit={handleSaveEdit} className="modal-edit-form">
+                  <div className="form-field-group">
+                    <label>Incident Title</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      required
+                    />
+                  </div>
 
-              {/* Event Description */}
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '4px 0' }}>
-                {data.description}
-              </p>
+                  <div className="form-grid-2">
+                    <div className="form-field-group">
+                      <label>Severity Level</label>
+                      <select
+                        value={editPriority}
+                        onChange={(e) => setEditPriority(e.target.value)}
+                      >
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                        <option value="informational">Informational</option>
+                      </select>
+                    </div>
 
-              {/* Metadata Grid */}
-              <div className="modal-meta-grid">
-                <div className="meta-field">
-                  <span className="lbl">Event ID</span>
-                  <span className="val code-id-cell">{data.id}</span>
-                </div>
-                <div className="meta-field">
-                  <span className="lbl">Detection Timestamp</span>
-                  <span className="val" style={{ fontFamily: 'var(--font-mono)' }}>
-                    {data.timestamp} ({data.timeAgo})
-                  </span>
-                </div>
-                <div className="meta-field">
-                  <span className="lbl">Monitoring Node</span>
-                  <span className="val" style={{ color: 'var(--accent-teal)', fontFamily: 'var(--font-mono)' }}>
-                    {data.sensorId} ({data.sensorType})
-                  </span>
-                </div>
-                <div className="meta-field">
-                  <span className="lbl">Forest Sector</span>
-                  <span className="val">{data.zoneName}</span>
-                </div>
-                <div className="meta-field" style={{ gridColumn: 'span 2' }}>
-                  <span className="lbl">Simulated Spatial Coordinates</span>
-                  <span className="val" style={{ fontFamily: 'var(--font-mono)' }}>
-                    {data.coordinates.simulatedLat}°N, {data.coordinates.simulatedLng}°E (Grid: {Math.round(data.coordinates.x)}, {Math.round(data.coordinates.y)})
-                  </span>
-                </div>
-                {data.confidence !== null && (
-                  <div className="meta-field">
-                    <span className="lbl">AI Model Confidence</span>
-                    <span className="val" style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)' }}>
-                      {Math.round(data.confidence * 100)}% Pattern Match
+                    <div className="form-field-group">
+                      <label>Status</label>
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                      >
+                        <option value="active">Active</option>
+                        <option value="acknowledged">Under Investigation</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-field-group">
+                    <label>Description</label>
+                    <textarea
+                      rows={3}
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="btn-action-sm"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-action-sm primary-ack"
+                    >
+                      <Save size={11} />
+                      <span>Save Changes</span>
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* Standard View */
+                <>
+                  {/* Event Status Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span className={`status-tag ${data.priority}`}>
+                      {data.priority.toUpperCase()} PRIORITY
+                    </span>
+                    <span className={`status-tag ${data.status}`}>
+                      STATUS: {data.status.toUpperCase()}
+                    </span>
+                    {data.isManual ? (
+                      <span
+                        className="status-tag"
+                        style={{
+                          backgroundColor: 'rgba(2, 132, 199, 0.12)',
+                          color: '#0284C7',
+                          border: '1px solid rgba(2, 132, 199, 0.3)'
+                        }}
+                      >
+                        MANUAL INCIDENT
+                      </span>
+                    ) : (
+                      <span
+                        className="status-tag"
+                        style={{
+                          backgroundColor: 'var(--bg-surface)',
+                          border: '1px solid var(--border-standard)',
+                          color: 'var(--text-muted)'
+                        }}
+                      >
+                        SENSOR TELEMETRY EVENT
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Event Description */}
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '4px 0' }}>
+                    {data.description}
+                  </p>
+
+                  {/* Metadata Grid */}
+                  <div className="modal-meta-grid">
+                    <div className="meta-field">
+                      <span className="lbl">Event ID</span>
+                      <span className="val code-id-cell">{data.id}</span>
+                    </div>
+                    <div className="meta-field">
+                      <span className="lbl">Detection Timestamp</span>
+                      <span className="val" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {data.timestamp} {data.timeAgo ? `(${data.timeAgo})` : ''}
+                      </span>
+                    </div>
+                    {data.sensorId && (
+                      <div className="meta-field">
+                        <span className="lbl">Monitoring Node</span>
+                        <span className="val" style={{ color: 'var(--accent-teal)', fontFamily: 'var(--font-mono)' }}>
+                          {data.sensorId} ({data.sensorType})
+                        </span>
+                      </div>
+                    )}
+                    <div className="meta-field">
+                      <span className="lbl">Forest Sector</span>
+                      <span className="val">{data.zoneName}</span>
+                    </div>
+                    <div className="meta-field" style={{ gridColumn: 'span 2' }}>
+                      <span className="lbl">Spatial Coordinates</span>
+                      <span className="val" style={{ fontFamily: 'var(--font-mono)' }}>
+                        {data.coordinates.simulatedLat}°N, {data.coordinates.simulatedLng}°E (Grid: {Math.round(data.coordinates.x)}, {Math.round(data.coordinates.y)})
+                      </span>
+                    </div>
+                    {data.confidence !== null && data.confidence !== undefined && (
+                      <div className="meta-field">
+                        <span className="lbl">Confidence</span>
+                        <span className="val" style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)' }}>
+                          {Math.round(data.confidence * 100)}% Pattern Match
+                        </span>
+                      </div>
+                    )}
+                    {data.source && (
+                      <div className="meta-field">
+                        <span className="lbl">Report Source</span>
+                        <span className="val">{data.source}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scientific & Academic Disclaimer */}
+                  <div className="notice-box-warning">
+                    <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <span>
+                      {data.disclaimer ||
+                        'Operational incident recorded on reserve intelligence map. Field ranger inspection recommended.'}
                     </span>
                   </div>
-                )}
-                {data.source && (
-                  <div className="meta-field">
-                    <span className="lbl">Classification Source</span>
-                    <span className="val">{data.source}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Scientific & Academic Disclaimer */}
-              <div className="notice-box-warning">
-                <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <span>
-                  {data.disclaimer ||
-                    'Simulated event generated for academic testing. Sound classification indicates acoustic similarity and does not confirm illegal poaching activity.'}
-                </span>
-              </div>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -191,62 +313,81 @@ export default function MarkerDetailModal({
                   </span>
                 </div>
               </div>
-
-              {/* Hardware Specifications */}
-              {data.specs && (
-                <div
-                  style={{
-                    backgroundColor: 'var(--bg-surface)',
-                    padding: '10px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px'
-                  }}
-                >
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                    Hardware Telemetry Specs
-                  </span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 12px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                    {Object.entries(data.specs).map(([key, val]) => (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{key}:</span>
-                        <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{String(val)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </>
           )}
 
           {/* Dialog Footer Actions */}
           <div className="modal-dialog-footer">
-            {itemType === 'event' && data.status === 'active' && (
-              <button
-                className="btn-action-sm primary-ack"
-                onClick={() => {
-                  onAcknowledge(data.id)
-                  onClose()
-                }}
-              >
-                <CheckCircle size={11} />
-                <span>Acknowledge</span>
-              </button>
-            )}
+            {itemType === 'event' && !isEditing && (
+              <>
+                {/* Reposition Action */}
+                <button
+                  className="btn-action-sm"
+                  onClick={() => {
+                    onRepositionEvent?.(data)
+                    onClose()
+                  }}
+                  title="Move marker to new position on the 3D terrain"
+                >
+                  <Move size={11} />
+                  <span>Reposition</span>
+                </button>
 
-            {itemType === 'event' && data.status === 'acknowledged' && (
-              <button
-                className="btn-action-sm primary-resolve"
-                onClick={() => {
-                  onResolve(data.id)
-                  onClose()
-                }}
-              >
-                <CheckCircle2 size={11} />
-                <span>Resolve</span>
-              </button>
+                {/* Edit Action */}
+                <button
+                  className="btn-action-sm"
+                  onClick={startEditing}
+                  title="Edit incident title, description, or severity"
+                >
+                  <Edit2 size={11} />
+                  <span>Edit</span>
+                </button>
+
+                {/* Delete Action (Manual incidents) */}
+                {data.isManual && (
+                  <button
+                    className="btn-action-sm danger"
+                    onClick={() => {
+                      if (window.confirm(`Delete incident "${data.title}"?`)) {
+                        onDeleteEvent?.(data.id)
+                        onClose()
+                      }
+                    }}
+                    title="Remove this incident from map and history"
+                  >
+                    <Trash2 size={11} />
+                    <span>Delete</span>
+                  </button>
+                )}
+
+                {/* Acknowledge Action */}
+                {data.status === 'active' && (
+                  <button
+                    className="btn-action-sm primary-ack"
+                    onClick={() => {
+                      onAcknowledge(data.id)
+                      onClose()
+                    }}
+                  >
+                    <CheckCircle size={11} />
+                    <span>Acknowledge</span>
+                  </button>
+                )}
+
+                {/* Resolve Action */}
+                {data.status === 'acknowledged' && (
+                  <button
+                    className="btn-action-sm primary-resolve"
+                    onClick={() => {
+                      onResolve(data.id)
+                      onClose()
+                    }}
+                  >
+                    <CheckCircle2 size={11} />
+                    <span>Resolve</span>
+                  </button>
+                )}
+              </>
             )}
 
             {itemType === 'sensor' && (
@@ -262,9 +403,11 @@ export default function MarkerDetailModal({
               </button>
             )}
 
-            <button className="btn-action-sm" onClick={onClose}>
-              Close
-            </button>
+            {!isEditing && (
+              <button className="btn-action-sm" onClick={onClose}>
+                Close
+              </button>
+            )}
           </div>
         </div>
       </div>

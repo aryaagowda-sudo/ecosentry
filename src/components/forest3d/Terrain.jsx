@@ -10,7 +10,7 @@ import {
   getRiverCenterlineX
 } from './terrainHelper'
 
-export default function Terrain({ selectedZone }) {
+export default function Terrain({ selectedZone, terrainMeshRef }) {
   // Generate the 3D Isometric Terrain Diorama:
   // 1. Top undulating surface with realistic hills, peaks, and river canyon
   // 2. Extruded vertical rock side skirts (North, South, East, West)
@@ -407,7 +407,7 @@ export default function Terrain({ selectedZone }) {
   return (
     <group>
       {/* 1. Main Realistic Undulating Terrain Surface */}
-      <mesh geometry={topGeometry} receiveShadow castShadow>
+      <mesh ref={terrainMeshRef} geometry={topGeometry} receiveShadow castShadow name="forest-terrain">
         <meshStandardMaterial
           vertexColors
           roughness={0.82}
