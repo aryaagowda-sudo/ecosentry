@@ -24,6 +24,7 @@ import {
   calculateDashboardStats,
   generateRandomDemoIncident
 } from './services/dataService'
+import { sendIncidentEmailNotification } from './services/emailService'
 
 import './App.css'
 
@@ -201,8 +202,18 @@ export default function App() {
   }
 
   // Incident Placement Handlers (Drag-and-Drop system)
-  const handleAddIncident = (newIncident) => {
+  const handleAddIncident = async (newIncident) => {
+    // 1. Immediately append to state to update UI, map markers, alerts, and trigger localStorage persistence
     setEvents((prev) => [newIncident, ...prev])
+
+    // 2. Dispatch automated EmailJS notification alert to configured operations address
+    try {
+      const emailResult = await sendIncidentEmailNotification(newIncident)
+      return emailResult
+    } catch (err) {
+      console.error('[EcoSentry] Unexpected error during incident email dispatch:', err)
+      return { success: false, reason: 'exception', error: err }
+    }
   }
 
   const handleEditIncident = (updatedIncident) => {

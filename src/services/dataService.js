@@ -80,7 +80,7 @@ export function calculateDashboardStats(sensors, events) {
   if (boundaryCrossingEvents.length > 0) speciesSet.add('Asian Elephant Herd')
 
   // 5. Threat Incidents (Separated from sensor hardware failures)
-  const threatEvents = events.filter((e) => e.category === 'threat')
+  const threatEvents = events.filter((e) => e.category === 'threat' || (e.isManual && e.category !== 'system'))
   const activeIncidents = threatEvents.filter((e) => e.status === 'active')
   const acknowledgedIncidents = threatEvents.filter((e) => e.status === 'acknowledged')
   const resolvedIncidents = threatEvents.filter((e) => e.status === 'resolved')

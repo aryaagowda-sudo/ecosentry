@@ -7,8 +7,17 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
-  Info
+  Info,
+  Mail,
+  Send,
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react'
+import {
+  getEmailConfig,
+  isEmailConfigured,
+  sendIncidentEmailNotification
+} from '../services/emailService'
 
 export default function SettingsView() {
   const [acousticThreshold, setAcousticThreshold] = useState(80)
@@ -17,6 +26,46 @@ export default function SettingsView() {
   const [autoAlertAudio, setAutoAlertAudio] = useState(true)
   const [autoAcknowledgeLow, setAutoAcknowledgeLow] = useState(false)
   const [savedFeedback, setSavedFeedback] = useState(false)
+
+  // EmailJS Testing State
+  const [testEmailStatus, setTestEmailStatus] = useState(null)
+  const emailConfig = getEmailConfig()
+  const isConfigured = isEmailConfigured()
+
+  const handleTestEmail = async () => {
+    setTestEmailStatus({ status: 'sending', message: 'Sending test alert email...' })
+    const testIncident = {
+      id: `EVT-TEST-${Date.now().toString().slice(-4)}`,
+      type: 'test_notification',
+      category: 'threat',
+      title: 'Manual Test Notification',
+      icon: '🧪',
+      priority: 'high',
+      status: 'active',
+      source: 'EcoSentry Settings Console',
+      zoneName: 'Zone 1: North Canopy Reserve',
+      zoneId: 'zone-1',
+      coordinates: { x: 50.0, y: 50.0, simulatedLat: 12.4588, simulatedLng: 76.1339 },
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      timeAgo: 'Just now',
+      description: 'This is a test notification generated from EcoSentry Settings to verify EmailJS browser integration.'
+    }
+
+    const result = await sendIncidentEmailNotification(testIncident)
+    if (result.success) {
+      setTestEmailStatus({
+        status: 'success',
+        message: `Test email sent successfully! Status: ${result.status} (${result.text})`
+      })
+    } else {
+      setTestEmailStatus({
+        status: 'error',
+        message: result.reason === 'unconfigured'
+          ? 'Environment variables are missing. Add VITE_EMAILJS_* to .env or Vercel.'
+          : `Failed to deliver email: ${typeof result.error === 'object' ? JSON.stringify(result.error) : result.error}`
+      })
+    }
+  }
 
   const handleSave = (e) => {
     e.preventDefault()
@@ -139,7 +188,97 @@ export default function SettingsView() {
             </div>
           </div>
 
-          {/* Group 3: Coordinate Reference System */}
+          {/* Group 3: EmailJS Automated Notifications */}
+          <div className="settings-section-card">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={14} style={{ color: 'var(--accent-green)' }} />
+                <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>
+                  Automated Incident Email Dispatch (EmailJS)
+                </h4>
+              </div>
+              <span
+                className={`kpi-status-badge ${isConfigured ? 'success' : 'warning'}`}
+                style={{ fontSize: '10px' }}
+              >
+                {isConfigured ? 'Active & Ready' : 'Awaiting Environment Variables'}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '10px' }}>
+              <div className="settings-form-group">
+                <label>Service ID (VITE_EMAILJS_SERVICE_ID)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={emailConfig.serviceId || 'Not configured'}
+                  className="settings-input"
+                  style={{ backgroundColor: '#F8FAFC', color: emailConfig.serviceId ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                />
+              </div>
+
+              <div className="settings-form-group">
+                <label>Template ID (VITE_EMAILJS_TEMPLATE_ID)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={emailConfig.templateId || 'Not configured'}
+                  className="settings-input"
+                  style={{ backgroundColor: '#F8FAFC', color: emailConfig.templateId ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                />
+              </div>
+
+              <div className="settings-form-group">
+                <label>Public Key (VITE_EMAILJS_PUBLIC_KEY)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={emailConfig.publicKey ? `${emailConfig.publicKey.slice(0, 4)}••••••••` : 'Not configured'}
+                  className="settings-input"
+                  style={{ backgroundColor: '#F8FAFC', color: emailConfig.publicKey ? 'var(--text-primary)' : 'var(--text-muted)' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                Every successful drag-and-drop incident creation on the 3D map automatically sends an alert email.
+              </span>
+
+              <button
+                type="button"
+                className="btn-action-sm"
+                onClick={handleTestEmail}
+                disabled={testEmailStatus?.status === 'sending'}
+                style={{ gap: '6px' }}
+              >
+                <Send size={11} />
+                <span>{testEmailStatus?.status === 'sending' ? 'Sending...' : 'Send Test Alert'}</span>
+              </button>
+            </div>
+
+            {testEmailStatus && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: testEmailStatus.status === 'success' ? '#ECFDF5' : testEmailStatus.status === 'error' ? '#FEF2F2' : '#EFF6FF',
+                  color: testEmailStatus.status === 'success' ? '#065F46' : testEmailStatus.status === 'error' ? '#991B1B' : '#1E40AF',
+                  border: `1px solid ${testEmailStatus.status === 'success' ? '#A7F3D0' : testEmailStatus.status === 'error' ? '#FECACA' : '#BFDBFE'}`
+                }}
+              >
+                {testEmailStatus.status === 'success' ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                <span>{testEmailStatus.message}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Group 4: Coordinate Reference System */}
           <div className="settings-section-card">
             <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', margin: 0 }}>
               Spatial Coordinate Reference

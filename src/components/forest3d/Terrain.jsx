@@ -87,6 +87,8 @@ export default function Terrain({ selectedZone, terrainMeshRef, portal }) {
 
     topGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
     topGeo.computeVertexNormals()
+    topGeo.computeBoundingBox()
+    topGeo.computeBoundingSphere()
 
     // 2. Build 3D Platform Skirt Walls (Sedimentary Rock Strata Cutaway)
     const skirtPositions = []

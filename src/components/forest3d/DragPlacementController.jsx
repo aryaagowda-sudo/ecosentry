@@ -3,6 +3,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { SEVERITY_LEVELS } from '../../data/toolboxEvents'
+import { getTerrainElevation } from './terrainHelper'
 
 /**
  * 3D Ghost Placement Marker rendered directly on the terrain
@@ -121,7 +122,7 @@ export default function DragPlacementController({
   const [isValid, setIsValid] = useState(false)
 
   useEffect(() => {
-    if (!draggingItem || !dragPointerPos || !terrainMeshRef?.current) {
+    if (!draggingItem || !dragPointerPos) {
       setGhostPos(null)
       setIsValid(false)
       onTerrainHitChange?.(null, false)
@@ -146,28 +147,47 @@ export default function DragPlacementController({
 
     // Convert screen coordinates into Normalized Device Coordinates [-1, 1]
     const ndcX = ((clientX - rect.left) / rect.width) * 2 - 1
-    const ndcY = -((clientY - rect.top) / rect.height) * 2 - 1
+    const ndcY = -((clientY - rect.top) / rect.height) * 2 + 1
 
     raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera)
 
-    // Raycast strictly against the forest terrain top surface mesh
+    let worldX = 0
+    let worldY = 0
+    let worldZ = 0
+    let hasHit = false
+
+    // 1. Raycast strictly against the forest terrain top surface mesh
     // Trees, sensors, and labels are ignored
-    const intersects = raycaster.intersectObject(terrainMeshRef.current)
+    if (terrainMeshRef?.current) {
+      const intersects = raycaster.intersectObject(terrainMeshRef.current, false)
+      if (intersects.length > 0) {
+        worldX = intersects[0].point.x
+        worldY = intersects[0].point.y
+        worldZ = intersects[0].point.z
+        hasHit = true
+      }
+    }
 
-    if (intersects.length > 0) {
-      const hit = intersects[0]
-      const { x, y, z } = hit.point
+    // 2. Resilient fallback: intersect horizontal ground plane and compute elevation mathematically
+    if (!hasHit) {
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+      const targetVec = new THREE.Vector3()
+      if (raycaster.ray.intersectPlane(groundPlane, targetVec)) {
+        worldX = targetVec.x
+        worldZ = targetVec.z
+        worldY = getTerrainElevation(worldX, worldZ)
+        hasHit = true
+      }
+    }
 
+    if (hasHit) {
       // Validate bounds: Platform diorama spans -50 to +50 on X and Z
-      const inBounds = Math.abs(x) <= 49.0 && Math.abs(z) <= 49.0
-
+      const inBounds = Math.abs(worldX) <= 49.0 && Math.abs(worldZ) <= 49.0
+      setGhostPos([worldX, worldY, worldZ])
+      setIsValid(inBounds)
       if (inBounds) {
-        setGhostPos([x, y, z])
-        setIsValid(true)
-        onTerrainHitChange?.({ x, y, z }, true)
+        onTerrainHitChange?.({ x: worldX, y: worldY, z: worldZ }, true)
       } else {
-        setGhostPos([x, y, z])
-        setIsValid(false)
         onTerrainHitChange?.(null, false)
       }
     } else {

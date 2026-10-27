@@ -113,6 +113,7 @@ function CameraController({ cameraTarget, isTopDown, cameraAction, isDragging, f
       maxDistance={180}
       maxPolarAngle={isTopDown ? 0.01 : Math.PI / 2.15}
       minPolarAngle={0.05}
+      enabled={!isDragging}
     />
   )
 }

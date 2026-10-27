@@ -32,7 +32,7 @@ export default function ThreatAlertsPanel({
   // Apply Multi-Criteria Filters
   const filteredAlerts = events.filter((evt) => {
     // Keep the response queue focused on incidents; hardware telemetry is surfaced in Sensor Health.
-    if (evt.category !== 'threat') return false
+    if (evt.category !== 'threat' && !evt.isManual) return false
 
     // Filter by Event Type
     if (typeFilter !== 'all' && evt.type !== typeFilter) return false
@@ -185,7 +185,11 @@ export default function ThreatAlertsPanel({
             >
               <div className="alert-top-meta">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {getEventIcon(alert.type, alert.priority)}
+                  {alert.icon ? (
+                    <span style={{ fontSize: '13px', lineHeight: 1 }}>{alert.icon}</span>
+                  ) : (
+                    getEventIcon(alert.type, alert.priority)
+                  )}
                   <span className="code-id-cell">{alert.id}</span>
                   <span className={`status-tag ${alert.priority}`}>
                     {alert.priority}
@@ -216,7 +220,7 @@ export default function ThreatAlertsPanel({
                 <div className="alert-location-tag">
                   <MapPin size={11} style={{ color: 'var(--text-muted)' }} />
                   <span>
-                    {alert.zoneName} • {alert.sensorId}
+                    {alert.zoneName} • {alert.sensorId || alert.source || 'Manual Report'}
                   </span>
                 </div>
                 {alert.confidence !== null ? (

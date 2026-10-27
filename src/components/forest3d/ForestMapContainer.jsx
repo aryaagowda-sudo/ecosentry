@@ -12,14 +12,18 @@ import {
   PanelLeftOpen,
   PanelLeftClose,
   GripVertical,
-  Move
+  Move,
+  X,
+  Mail,
+  MailCheck,
+  MailX
 } from 'lucide-react'
 
 import ForestCanvas from './ForestCanvas'
 import SimulatedForestMap from '../SimulatedForestMap' // Preserved 2D tactical view
 import IncidentToolbox from './IncidentToolbox'
-import PostDropIncidentModal from './PostDropIncidentModal'
 import { getZoneFromGridCoords, gridToSimulatedLatLng } from './terrainHelper'
+import { isEmailConfigured } from '../../services/emailService'
 
 export default function ForestMapContainer({
   zones,
@@ -55,7 +59,16 @@ export default function ForestMapContainer({
   // Drag and Drop Placement States
   const [draggingItem, setDraggingItem] = useState(null)
   const [dragPointerPos, setDragPointerPos] = useState(null)
-  const [pendingDrop, setPendingDrop] = useState(null)
+  const [dropToast, setDropToast] = useState(null)
+
+  // Auto-dismiss drop notification toast after 5 seconds
+  useEffect(() => {
+    if (!dropToast) return
+    const timer = setTimeout(() => {
+      setDropToast(null)
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [dropToast])
 
   // Real-time terrain intersection ref (reported from DragPlacementController inside Three.js)
   const terrainHitRef = useRef(null)
@@ -154,15 +167,73 @@ export default function ForestMapContainer({
             simulatedLat: latLng.simulatedLat,
             simulatedLng: latLng.simulatedLng
           })
-        } else {
-          // Open the post-drop incident configuration dialog
-          setPendingDrop({
-            item: draggingItem,
-            zone: detectedZone,
-            gridCoords: { x: gridX, y: gridY },
-            latLng,
-            timestamp
+          setDropToast({
+            title: draggingItem.title,
+            zoneName: detectedZone.name,
+            icon: draggingItem.icon || '📍',
+            message: `Repositioned to ${detectedZone.name}`
           })
+        } else {
+          // Automatic immediate incident creation (No confirmation modal required)
+          const newIncident = {
+            id: `EVT-MAN-${Date.now().toString().slice(-4)}`,
+            type: draggingItem.type || 'manual_incident',
+            category: draggingItem.category || 'threat',
+            title: draggingItem.title || 'New Incident',
+            description:
+              draggingItem.defaultDescription ||
+              `Field incident logged at ${detectedZone.name}.`,
+            icon: draggingItem.icon || '📍',
+            zoneId: detectedZone.id,
+            zoneName: detectedZone.name,
+            coordinates: {
+              x: Number(gridX.toFixed(1)),
+              y: Number(gridY.toFixed(1)),
+              simulatedLat: latLng.simulatedLat,
+              simulatedLng: latLng.simulatedLng
+            },
+            timestamp: timestamp,
+            timeAgo: 'Just now',
+            confidence: 1.0,
+            priority: draggingItem.defaultSeverity || 'high',
+            status: 'active',
+            source: 'Manual Field Report',
+            isManual: true,
+            disclaimer:
+              'Manual incident logged by reserve operations command via 3D interactive placement.'
+          }
+
+          const emailPromise = onAddIncident?.(newIncident)
+          const hasEmailConfig = isEmailConfigured()
+
+          setDropToast({
+            title: newIncident.title,
+            zoneName: detectedZone.name,
+            icon: newIncident.icon,
+            event: newIncident,
+            message: `Logged at ${detectedZone.name} [${Number(gridX.toFixed(1))}, ${Number(gridY.toFixed(1))}]`,
+            emailStatus: hasEmailConfig ? 'sending' : null
+          })
+
+          if (emailPromise && typeof emailPromise.then === 'function') {
+            emailPromise
+              .then((res) => {
+                if (res?.success) {
+                  setDropToast((prev) =>
+                    prev ? { ...prev, emailStatus: 'sent' } : null
+                  )
+                } else if (res?.reason && res.reason !== 'unconfigured') {
+                  setDropToast((prev) =>
+                    prev ? { ...prev, emailStatus: 'failed' } : null
+                  )
+                }
+              })
+              .catch(() => {
+                setDropToast((prev) =>
+                  prev ? { ...prev, emailStatus: 'failed' } : null
+                )
+              })
+          }
         }
       }
 
@@ -191,13 +262,7 @@ export default function ForestMapContainer({
       window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [draggingItem, onRepositionIncident])
-
-  // Confirming the new incident from PostDropIncidentModal
-  const handleConfirmNewIncident = (incidentData) => {
-    onAddIncident?.(incidentData)
-    setPendingDrop(null)
-  }
+  }, [draggingItem, onRepositionIncident, onAddIncident])
 
   const selectedMarkerId = selectedItem?.data?.id
 
@@ -486,13 +551,57 @@ export default function ForestMapContainer({
         </div>
       )}
 
-      {/* 6. Post-Drop Incident Configuration Modal */}
-      {pendingDrop && (
-        <PostDropIncidentModal
-          pendingDrop={pendingDrop}
-          onConfirm={handleConfirmNewIncident}
-          onCancel={() => setPendingDrop(null)}
-        />
+      {/* 6. Instant Drop Notification Toast (Replaces blocking modal) */}
+      {dropToast && (
+        <div className="incident-created-toast">
+          <div className="toast-left">
+            <span className="toast-emoji">{dropToast.icon}</span>
+            <div className="toast-info">
+              <div className="toast-title-row">
+                <span className="toast-title">{dropToast.title} Placed</span>
+                {dropToast.emailStatus === 'sending' && (
+                  <span className="toast-email-badge sending" title="Sending email notification via EmailJS">
+                    <Mail size={11} className="email-spin-icon" />
+                    <span>Emailing dispatch...</span>
+                  </span>
+                )}
+                {dropToast.emailStatus === 'sent' && (
+                  <span className="toast-email-badge sent" title="Incident notification email delivered via EmailJS">
+                    <MailCheck size={11} />
+                    <span>Email alert sent</span>
+                  </span>
+                )}
+                {dropToast.emailStatus === 'failed' && (
+                  <span className="toast-email-badge failed" title="EmailJS failed to deliver notification">
+                    <MailX size={11} />
+                    <span>Email failed</span>
+                  </span>
+                )}
+              </div>
+              <span className="toast-desc">{dropToast.message}</span>
+            </div>
+          </div>
+          <div className="toast-right">
+            {dropToast.event && (
+              <button
+                className="btn-toast-inspect"
+                onClick={() => {
+                  onSelectMarker?.({ itemType: 'event', data: dropToast.event })
+                  setDropToast(null)
+                }}
+              >
+                Inspect / Edit
+              </button>
+            )}
+            <button
+              className="btn-toast-close"
+              onClick={() => setDropToast(null)}
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

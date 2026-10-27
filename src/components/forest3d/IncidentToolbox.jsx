@@ -181,9 +181,11 @@ export default function IncidentToolbox({
               <div
                 key={item.id}
                 className={`toolbox-event-card severity-${item.defaultSeverity}`}
+                draggable={false}
                 onPointerDown={(e) => {
                   // Only initiate drag on left mouse click or touch
                   if (e.button !== undefined && e.button !== 0) return
+                  e.preventDefault()
                   onStartDrag(item, e)
                 }}
                 title={`Drag "${item.title}" onto 3D forest map • Severity: ${item.defaultSeverity}`}
