@@ -1,299 +1,159 @@
-import React, { useMemo, useRef, useLayoutEffect } from 'react'
+import React, { Component, Suspense, useMemo } from 'react'
 import * as THREE from 'three'
+import { useGLTF } from '@react-three/drei'
 import {
-  WORLD_SIZE,
-  HALF_SIZE,
   getTerrainElevation,
   getRiverCenterlineX,
   gridToWorld
 } from './terrainHelper'
-import { INITIAL_SENSORS, INITIAL_EVENTS, ANIMAL_TRAILS } from '../../data/mockData'
+import { INITIAL_SENSORS, INITIAL_EVENTS } from '../../data/mockData'
+
+const TREE_ASSETS = {
+  broadleaf: '/assets/forest/mature-english-oak.glb',
+  conifer: '/assets/forest/mature-norway-spruce.glb',
+  riparian: '/assets/forest/mature-common-alder.glb',
+  willow: '/assets/forest/mature-white-willow.glb',
+  shrub: '/assets/forest/young-hazel-shrub.glb'
+}
+
+function prepareAsset(scene, targetHeight) {
+  const clone = scene.clone(true)
+  const bounds = new THREE.Box3().setFromObject(clone)
+  const size = bounds.getSize(new THREE.Vector3())
+  const scale = targetHeight / Math.max(size.y, 0.001)
+  clone.scale.setScalar(scale)
+  clone.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true
+      child.receiveShadow = true
+      if (child.material) child.material = child.material.clone()
+    }
+  })
+  const scaledBounds = new THREE.Box3().setFromObject(clone)
+  clone.position.y -= scaledBounds.min.y
+  return clone
+}
+
+function AssetTree({ scene, tree, height, variant = 0 }) {
+  const model = useMemo(() => prepareAsset(scene, height), [scene, height])
+  const position = [tree.x, tree.y, tree.z]
+  const scale = tree.scale * (0.92 + (variant % 5) * 0.045)
+  return <primitive object={model} position={position} rotation={[0, tree.rot, 0]} scale={scale} />
+}
+
+function AssetGroup({ scene, list, height, variantOffset = 0 }) {
+  return list.map((tree, index) => (
+    <AssetTree key={`${tree.x}-${tree.z}-${index}`} scene={scene} tree={tree} height={height} variant={index + variantOffset} />
+  ))
+}
+
+function ProceduralFallback({ lists }) {
+  const trunk = useMemo(() => new THREE.CylinderGeometry(0.16, 0.25, 2, 5), [])
+  const crown = useMemo(() => new THREE.IcosahedronGeometry(1.5, 1), [])
+  return (
+    <group>
+      {lists.map((tree, index) => (
+        <group key={`fallback-${index}`} position={[tree.x, tree.y, tree.z]} rotation={[0, tree.rot, 0]} scale={tree.scale}>
+          <mesh geometry={trunk} position={[0, 1, 0]} castShadow>
+            <meshStandardMaterial color="#352719" roughness={0.9} />
+          </mesh>
+          <mesh geometry={crown} position={[0, 2.5, 0]} scale={[1, 0.9, 1]} castShadow>
+            <meshStandardMaterial color="#2d6841" roughness={0.86} flatShading />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+class AssetErrorBoundary extends Component {
+  state = { hasError: false }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
+}
+
+function LoadedVegetation({ pineList, broadleafList, riverTreeList, shrubList }) {
+  const broadleaf = useGLTF(TREE_ASSETS.broadleaf).scene
+  const conifer = useGLTF(TREE_ASSETS.conifer).scene
+  const riparian = useGLTF(TREE_ASSETS.riparian).scene
+  const willow = useGLTF(TREE_ASSETS.willow).scene
+  const shrub = useGLTF(TREE_ASSETS.shrub).scene
+
+  const willowList = riverTreeList.filter((_, index) => index % 3 === 0)
+  const alderList = riverTreeList.filter((_, index) => index % 3 !== 0)
+
+  return (
+    <group>
+      <AssetGroup scene={conifer} list={pineList} height={15} variantOffset={3} />
+      <AssetGroup scene={broadleaf} list={broadleafList} height={12} variantOffset={11} />
+      <AssetGroup scene={willow} list={willowList} height={8} variantOffset={19} />
+      <AssetGroup scene={riparian} list={alderList} height={9} variantOffset={23} />
+      <AssetGroup scene={shrub} list={shrubList} height={3.2} variantOffset={31} />
+    </group>
+  )
+}
 
 export default function Vegetation() {
-  const pineTrunkRef = useRef()
-  const pineFoliageRef = useRef()
-  const broadleafTrunkRef = useRef()
-  const broadleafFoliageRef = useRef()
-  const riverTreeTrunkRef = useRef()
-  const riverTreeFoliageRef = useRef()
-  const shrubRef = useRef()
-
-  // Pre-calculate sensor, threat, and trail clearing zones so markers remain unobstructed
   const { clearedZones } = useMemo(() => {
-    const list = []
-
-    // 1. Sensor locations
-    INITIAL_SENSORS.forEach((s) => {
-      const [wx, , wz] = gridToWorld(s.coordinates.x, s.coordinates.y)
-      list.push({ x: wx, z: wz, radius: 4.2 })
+    const zones = []
+    INITIAL_SENSORS.forEach((sensor) => {
+      const [x, , z] = gridToWorld(sensor.coordinates.x, sensor.coordinates.y)
+      zones.push({ x, z, radius: 4.2 })
     })
-
-    // 2. Threat event locations
-    INITIAL_EVENTS.forEach((e) => {
-      const [wx, , wz] = gridToWorld(e.coordinates.x, e.coordinates.y)
-      list.push({ x: wx, z: wz, radius: 3.8 })
+    INITIAL_EVENTS.forEach((event) => {
+      const [x, , z] = gridToWorld(event.coordinates.x, event.coordinates.y)
+      zones.push({ x, z, radius: 3.8 })
     })
-
-    return { clearedZones: list }
+    return { clearedZones: zones }
   }, [])
 
-  // Generate dense, realistic forest tree positions across the 4 sectors
-  const { pineList, broadleafList, riverTreeList, shrubList } = useMemo(() => {
+  const lists = useMemo(() => {
     const pines = []
     const broadleafs = []
     const riverTrees = []
     const shrubs = []
-
-    // Deterministic pseudo-random number generator
     let seed = 123456
-    function rnd() {
+    const rnd = () => {
       seed = (seed * 9301 + 49297) % 233280
       return seed / 233280
     }
-
-    // Helper to check if a location is cleared
-    function isNearClearedLocation(x, z) {
-      // 1. Avoid riverbed water and immediate riparian channel banks
-      const riverX = getRiverCenterlineX(z)
-      if (Math.abs(x - riverX) < 4.8) return true
-
-      // 2. Avoid sensor & event clearings so markers are unobstructed
-      for (let i = 0; i < clearedZones.length; i++) {
-        const cz = clearedZones[i]
-        const d2 = (x - cz.x) * (x - cz.x) + (z - cz.z) * (z - cz.z)
-        if (d2 < cz.radius * cz.radius) return true
-      }
-
-      // 3. Keep slightly within outer platform boundary
-      if (Math.abs(x) > 44 || Math.abs(z) > 44) return true
-
-      return false
+    const isCleared = (x, z) => {
+      if (Math.abs(x - getRiverCenterlineX(z)) < 4.8) return true
+      if (clearedZones.some((zone) => (x - zone.x) ** 2 + (z - zone.z) ** 2 < zone.radius ** 2)) return true
+      return Math.abs(x) > 44 || Math.abs(z) > 44
     }
 
-    // Generate balanced, natural tree canopy: 650 trees across reserve
-    // Allows terrain topography, river, and surveillance network to be seen clearly
-    const targetCount = 650
     let attempts = 0
-
-    while ((pines.length + broadleafs.length + riverTrees.length + shrubs.length) < targetCount && attempts < 1800) {
-      attempts++
+    while (pines.length + broadleafs.length + riverTrees.length + shrubs.length < 128 && attempts < 1000) {
+      attempts += 1
       const x = -44 + rnd() * 88
       const z = -44 + rnd() * 88
-
-      if (isNearClearedLocation(x, z)) continue
-
+      if (isCleared(x, z)) continue
       const y = getTerrainElevation(x, z)
-      const riverX = getRiverCenterlineX(z)
-      const distFromRiver = Math.abs(x - riverX)
+      const riverDistance = Math.abs(x - getRiverCenterlineX(z))
+      const tree = { x, y, z, scale: 0.78 + rnd() * 0.42, rot: rnd() * Math.PI * 2 }
 
-      const scale = 0.65 + rnd() * 0.35
-      const rot = rnd() * Math.PI * 2
-
-      if (distFromRiver < 9.0) {
-        // Riparian riverbank tree (willows & wetland canopy)
-        riverTrees.push({ x, y, z, scale: scale * 0.95, rot })
-      } else if (x < 8 && z < 8) {
-        // Zone 1 & High Ridges: dense mix of tall pines and rainforest broadleaf
-        if (rnd() > 0.42 || y > 7.0) {
-          pines.push({ x, y, z, scale: scale * 1.1, rot })
-        } else {
-          broadleafs.push({ x, y, z, scale: scale * 1.0, rot })
-        }
-      } else if (x <= 5 && z > 5) {
-        // Zone 3: Wildlife Corridor (rich forest with shrub undergrowth)
-        if (rnd() > 0.5) {
-          broadleafs.push({ x, y, z, scale, rot })
-        } else if (rnd() > 0.4) {
-          pines.push({ x, y, z, scale: scale * 1.05, rot })
-        } else {
-          shrubs.push({ x, y, z, scale: scale * 0.75, rot })
-        }
-      } else if (x > 5 && z <= 5) {
-        // Zone 2: River Basin eastern forests
-        if (rnd() > 0.4) {
-          broadleafs.push({ x, y, z, scale, rot })
-        } else {
-          pines.push({ x, y, z, scale: scale * 0.95, rot })
-        }
-      } else {
-        // Zone 4: West Buffer Zone (woodland clusters with open patches)
-        if (rnd() > 0.55) {
-          broadleafs.push({ x, y, z, scale: scale * 0.9, rot })
-        } else if (rnd() > 0.6) {
-          shrubs.push({ x, y, z, scale: scale * 0.7, rot })
-        }
-      }
+      if (riverDistance < 10) riverTrees.push({ ...tree, scale: tree.scale * 0.8 })
+      else if (x < 8 && z < 8) (rnd() > 0.42 || y > 7 ? pines : broadleafs).push(tree)
+      else if (x <= 5 && z > 5) (rnd() > 0.5 ? broadleafs : rnd() > 0.4 ? pines : shrubs).push(tree)
+      else if (x > 5 && z <= 5) (rnd() > 0.4 ? broadleafs : pines).push(tree)
+      else (rnd() > 0.55 ? broadleafs : shrubs).push({ ...tree, scale: tree.scale * 0.84 })
     }
-
-    return {
-      pineList: pines,
-      broadleafList: broadleafs,
-      riverTreeList: riverTrees,
-      shrubList: shrubs
-    }
+    return { pineList: pines, broadleafList: broadleafs, riverTreeList: riverTrees, shrubList: shrubs }
   }, [clearedZones])
 
-  // Populate instanced matrix transforms
-  useLayoutEffect(() => {
-    const dummy = new THREE.Object3D()
-
-    // 1. Pines
-    if (pineTrunkRef.current && pineFoliageRef.current) {
-      pineList.forEach((tree, i) => {
-        // Trunk
-        dummy.position.set(tree.x, tree.y + 1.2 * tree.scale, tree.z)
-        dummy.rotation.set(0, tree.rot, 0)
-        dummy.scale.set(tree.scale, tree.scale, tree.scale)
-        dummy.updateMatrix()
-        pineTrunkRef.current.setMatrixAt(i, dummy.matrix)
-
-        // Foliage
-        dummy.position.set(tree.x, tree.y + 2.8 * tree.scale, tree.z)
-        dummy.updateMatrix()
-        pineFoliageRef.current.setMatrixAt(i, dummy.matrix)
-      })
-      pineTrunkRef.current.instanceMatrix.needsUpdate = true
-      pineFoliageRef.current.instanceMatrix.needsUpdate = true
-    }
-
-    // 2. Broadleaf Trees
-    if (broadleafTrunkRef.current && broadleafFoliageRef.current) {
-      broadleafList.forEach((tree, i) => {
-        // Trunk
-        dummy.position.set(tree.x, tree.y + 1.1 * tree.scale, tree.z)
-        dummy.rotation.set(0, tree.rot, 0)
-        dummy.scale.set(tree.scale, tree.scale, tree.scale)
-        dummy.updateMatrix()
-        broadleafTrunkRef.current.setMatrixAt(i, dummy.matrix)
-
-        // Foliage
-        dummy.position.set(tree.x, tree.y + 2.5 * tree.scale, tree.z)
-        dummy.updateMatrix()
-        broadleafFoliageRef.current.setMatrixAt(i, dummy.matrix)
-      })
-      broadleafTrunkRef.current.instanceMatrix.needsUpdate = true
-      broadleafFoliageRef.current.instanceMatrix.needsUpdate = true
-    }
-
-    // 3. River Trees
-    if (riverTreeTrunkRef.current && riverTreeFoliageRef.current) {
-      riverTreeList.forEach((tree, i) => {
-        dummy.position.set(tree.x, tree.y + 0.9 * tree.scale, tree.z)
-        dummy.rotation.set(0, tree.rot, 0)
-        dummy.scale.set(tree.scale, tree.scale, tree.scale)
-        dummy.updateMatrix()
-        riverTreeTrunkRef.current.setMatrixAt(i, dummy.matrix)
-
-        dummy.position.set(tree.x, tree.y + 2.1 * tree.scale, tree.z)
-        dummy.updateMatrix()
-        riverTreeFoliageRef.current.setMatrixAt(i, dummy.matrix)
-      })
-      riverTreeTrunkRef.current.instanceMatrix.needsUpdate = true
-      riverTreeFoliageRef.current.instanceMatrix.needsUpdate = true
-    }
-
-    // 4. Shrubs / Understory
-    if (shrubRef.current) {
-      shrubList.forEach((bush, i) => {
-        dummy.position.set(bush.x, bush.y + 0.6 * bush.scale, bush.z)
-        dummy.rotation.set(0, bush.rot, 0)
-        dummy.scale.set(bush.scale, bush.scale, bush.scale)
-        dummy.updateMatrix()
-        shrubRef.current.setMatrixAt(i, dummy.matrix)
-      })
-      shrubRef.current.instanceMatrix.needsUpdate = true
-    }
-  }, [pineList, broadleafList, riverTreeList, shrubList])
-
-  // Geometries for instancing
-  const geometries = useMemo(() => {
-    return {
-      trunk: new THREE.CylinderGeometry(0.18, 0.28, 2.2, 5),
-      pineFoliage: new THREE.ConeGeometry(1.4, 3.4, 5),
-      broadleafFoliage: new THREE.DodecahedronGeometry(1.65, 1),
-      riverFoliage: new THREE.DodecahedronGeometry(1.4, 1),
-      shrubFoliage: new THREE.SphereGeometry(1.1, 5, 4)
-    }
-  }, [])
-
+  const allFallbackTrees = [...lists.pineList, ...lists.broadleafList, ...lists.riverTreeList, ...lists.shrubList]
   return (
-    <group>
-      {/* 1. Tall Conifer Pines */}
-      <instancedMesh
-        ref={pineTrunkRef}
-        args={[geometries.trunk, null, pineList.length]}
-        castShadow
-      >
-        <meshStandardMaterial color="#2d2216" roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh
-        ref={pineFoliageRef}
-        args={[geometries.pineFoliage, null, pineList.length]}
-        castShadow
-      >
-        <meshStandardMaterial
-          color="#0f3d23" // Deep pine conifer green
-          roughness={0.72}
-          metalness={0.04}
-          flatShading
-        />
-      </instancedMesh>
-
-      {/* 2. Dense Canopy Broadleaf Trees */}
-      <instancedMesh
-        ref={broadleafTrunkRef}
-        args={[geometries.trunk, null, broadleafList.length]}
-        castShadow
-      >
-        <meshStandardMaterial color="#36291a" roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh
-        ref={broadleafFoliageRef}
-        args={[geometries.broadleafFoliage, null, broadleafList.length]}
-        castShadow
-      >
-        <meshStandardMaterial
-          color="#1b5230" // Rich emerald rainforest canopy
-          roughness={0.76}
-          metalness={0.06}
-          flatShading
-        />
-      </instancedMesh>
-
-      {/* 3. Riparian Riverbank Trees */}
-      <instancedMesh
-        ref={riverTreeTrunkRef}
-        args={[geometries.trunk, null, riverTreeList.length]}
-        castShadow
-      >
-        <meshStandardMaterial color="#33271c" roughness={0.9} />
-      </instancedMesh>
-      <instancedMesh
-        ref={riverTreeFoliageRef}
-        args={[geometries.riverFoliage, null, riverTreeList.length]}
-        castShadow
-      >
-        <meshStandardMaterial
-          color="#29663f" // Lush river delta green
-          roughness={0.74}
-          metalness={0.05}
-          flatShading
-        />
-      </instancedMesh>
-
-      {/* 4. Understory Shrubs & Bush Clusters */}
-      <instancedMesh
-        ref={shrubRef}
-        args={[geometries.shrubFoliage, null, shrubList.length]}
-        castShadow
-      >
-        <meshStandardMaterial
-          color="#1e4d2b"
-          roughness={0.8}
-          metalness={0.02}
-          flatShading
-        />
-      </instancedMesh>
-    </group>
+    <AssetErrorBoundary fallback={<ProceduralFallback lists={allFallbackTrees} />}>
+      <Suspense fallback={<ProceduralFallback lists={allFallbackTrees} />}>
+        <LoadedVegetation {...lists} />
+      </Suspense>
+    </AssetErrorBoundary>
   )
 }
+
+Object.values(TREE_ASSETS).forEach((url) => useGLTF.preload(url))

@@ -5,7 +5,7 @@ import { ShieldAlert, Volume2, Flame, User, Footprints, AlertTriangle, Move, Act
 import { gridToWorld, getSensorDisplayTag } from './terrainHelper'
 import { SEVERITY_LEVELS } from '../../data/toolboxEvents'
 
-export default function ThreatMarker3D({ event, onSelectEvent, isSelected, onStartReposition }) {
+export default function ThreatMarker3D({ event, onSelectEvent, isSelected, onStartReposition, portal }) {
   const ringRef = useRef()
   const [hovered, setHovered] = useState(false)
   
@@ -105,6 +105,7 @@ export default function ThreatMarker3D({ event, onSelectEvent, isSelected, onSta
 
       {/* 3. Solid Pill Tag (Severity themed, matching Image 2 for automated, custom-styled for manual) */}
       <Html
+        portal={portal}
         position={[0, 4.2, 0]}
         center
         distanceFactor={55}

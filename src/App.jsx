@@ -419,18 +419,7 @@ export default function App() {
                 />
               </div>
 
-              {/* 6. Lower Section: Full Incident History Audit Log */}
-              <IncidentHistoryTable
-                events={events}
-                zones={SIMULATED_ZONES}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                onAcknowledge={handleAcknowledge}
-                onResolve={handleResolve}
-                onInspectEvent={handleInspectEvent}
-              />
-
-              {/* 7. Restrained Enterprise Footer Disclaimer */}
+              {/* 6. Restrained Enterprise Footer Disclaimer */}
               <footer className="overview-footer-disclaimer">
                 <span>EcoSentry Wildlife Intelligence Platform • Simulated telemetry & acoustic classifications for academic demonstration.</span>
                 <span className="footer-coords">Simulated Datum: WGS84 • 12.450°N, 76.140°E</span>

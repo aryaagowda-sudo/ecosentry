@@ -3,7 +3,7 @@ import { Html } from '@react-three/drei'
 import { Activity } from 'lucide-react'
 import { gridToWorld } from './terrainHelper'
 
-export default function WildlifeModel3D({ event, onSelectWildlife, isSelected }) {
+export default function WildlifeModel3D({ event, onSelectWildlife, isSelected, portal }) {
   const [hovered, setHovered] = useState(false)
   const activeHighlight = hovered || isSelected
   const [worldX, worldY, worldZ] = gridToWorld(
@@ -190,6 +190,7 @@ export default function WildlifeModel3D({ event, onSelectWildlife, isSelected })
       {/* 4. Compact Wildlife Detection Tag — Only rendered when hovered or selected to prevent permanent canopy clutter */}
       {activeHighlight && (
         <Html
+        portal={portal}
           position={[0, 3.8, 0]}
           center
           distanceFactor={55}
