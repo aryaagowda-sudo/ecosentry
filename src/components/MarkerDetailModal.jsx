@@ -237,6 +237,30 @@ export default function MarkerDetailModal({
                         </span>
                       </div>
                     )}
+                    {data.detectingSensors && data.detectingSensors.length > 0 && (
+                      <div className="meta-field" style={{ gridColumn: 'span 2' }}>
+                        <span className="lbl">Acoustic Fusion</span>
+                        <span className="val" style={{ color: '#00f0ff', fontFamily: 'var(--font-mono)' }}>
+                          {data.detectionCount || data.detectingSensors.length} Nodes Confirmed ({data.detectingSensors.join(', ')})
+                        </span>
+                      </div>
+                    )}
+                    {data.uncertaintyRadius && (
+                      <div className="meta-field" style={{ gridColumn: 'span 2' }}>
+                        <span className="lbl">Source Localization</span>
+                        <span className="val" style={{ color: '#f59e0b', fontFamily: 'var(--font-mono)' }}>
+                          Estimated Area (R = {data.uncertaintyRadius} simulated units)
+                        </span>
+                      </div>
+                    )}
+                    {data.packetId && (
+                      <div className="meta-field" style={{ gridColumn: 'span 2' }}>
+                        <span className="lbl">Mesh Packet</span>
+                        <span className="val" style={{ color: '#06b6d4', fontFamily: 'var(--font-mono)' }}>
+                          Packet {data.packetId} • Origin: {data.originatingSensorId || 'Sensor'} • {data.transmissionStatus?.toUpperCase() || 'IN TRANSIT'}
+                        </span>
+                      </div>
+                    )}
                     {data.source && (
                       <div className="meta-field">
                         <span className="lbl">Report Source</span>

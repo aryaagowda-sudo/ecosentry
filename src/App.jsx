@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react'
-import { Download, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { Download, AlertTriangle } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import TopNav from './components/TopNav'
 import OverviewCards from './components/OverviewCards'
@@ -13,6 +13,20 @@ import WildlifeDetectionsView from './components/WildlifeDetectionsView'
 import AnalyticsView from './components/AnalyticsView'
 import SettingsView from './components/SettingsView'
 import MarkerDetailModal from './components/MarkerDetailModal'
+import TacticalRoutingView from './components/tactical/TacticalRoutingView'
+
+import {
+  DEFAULT_COMMUNICATION_RANGE,
+  DEFAULT_ACOUSTIC_RANGE,
+  generateSensorTopology,
+  getBaseStation
+} from './services/meshNetwork/sensorTopology.js'
+import { detectAcousticEvent, selectPacketOriginator } from './services/meshNetwork/acousticDetection.js'
+import { estimateSourceLocation } from './services/meshNetwork/incidentFusion.js'
+import { buildMeshGraph } from './services/meshNetwork/graphBuilder.js'
+import { findShortestPath } from './services/meshNetwork/dijkstra.js'
+import { createMeshPacket, stepMeshPacket } from './services/meshNetwork/packetSimulator.js'
+import { enqueueMessageAtSensor } from './services/meshNetwork/storeAndForward.js'
 
 import {
   INITIAL_SENSORS,
@@ -24,13 +38,61 @@ import {
   calculateDashboardStats,
   generateRandomDemoIncident
 } from './services/dataService'
-import { sendIncidentEmailNotification } from './services/emailService'
+import {
+  sendIncidentEmailNotification,
+  EMAIL_NOTIFICATION_MODES,
+  DEFAULT_EMAIL_NOTIFICATION_MODE
+} from './services/emailService'
 
 import './App.css'
 
 export default function App() {
   // Centralized Application State
   const [sensors, setSensors] = useState(INITIAL_SENSORS)
+
+  // Centralized Acoustic Mesh Sensors State (28 acoustic nodes)
+  const [meshSensors, setMeshSensors] = useState(() =>
+    generateSensorTopology(28, DEFAULT_COMMUNICATION_RANGE, DEFAULT_ACOUSTIC_RANGE)
+  )
+
+  // Primary Base Station State
+  const [baseStation, setBaseStation] = useState(() => getBaseStation())
+
+  // Active Mesh Telemetry Packets
+  const [packets, setPackets] = useState([])
+
+  // Persistent Email Notification Mode (Default: 'AFTER BASE STATION RECEIVES PACKET')
+  const [emailNotificationMode, setEmailNotificationMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ecosentry_email_notification_mode')
+      if (saved && Object.values(EMAIL_NOTIFICATION_MODES).includes(saved)) {
+        return saved
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved email notification mode:', e)
+    }
+    return DEFAULT_EMAIL_NOTIFICATION_MODE
+  })
+
+  // Base Station Packet Arrival Toast Notification
+  const [baseDeliveryToast, setBaseDeliveryToast] = useState(null)
+  const deliveredMessageIdsRef = useRef(new Set())
+
+  // Persist email notification mode to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('ecosentry_email_notification_mode', emailNotificationMode)
+    } catch (e) {
+      console.warn('Failed to save email notification mode:', e)
+    }
+  }, [emailNotificationMode])
+
+  // Auto-dismiss base delivery toast after 6 seconds
+  useEffect(() => {
+    if (!baseDeliveryToast) return
+    const timer = setTimeout(() => setBaseDeliveryToast(null), 6000)
+    return () => clearTimeout(timer)
+  }, [baseDeliveryToast])
   
   // Persisted Events State with localStorage
   const [events, setEvents] = useState(() => {
@@ -201,18 +263,259 @@ export default function App() {
     setSelectedItem({ itemType: 'event', data: alertItem })
   }
 
-  // Incident Placement Handlers (Drag-and-Drop system)
-  const handleAddIncident = async (newIncident) => {
-    // 1. Immediately append to state to update UI, map markers, alerts, and trigger localStorage persistence
-    setEvents((prev) => [newIncident, ...prev])
+  // Handle Packet Arrival at Base Station
+  const handlePacketDeliveredAtBase = useCallback(async (deliveredPkt) => {
+    const pktId = deliveredPkt.messageId || deliveredPkt.id
+    if (deliveredMessageIdsRef.current.has(pktId)) {
+      return // Single delivery guarantee: never deliver or trigger emails twice
+    }
+    deliveredMessageIdsRef.current.add(pktId)
 
-    // 2. Dispatch automated EmailJS notification alert to configured operations address
-    try {
-      const emailResult = await sendIncidentEmailNotification(newIncident)
-      return emailResult
-    } catch (err) {
-      console.error('[EcoSentry] Unexpected error during incident email dispatch:', err)
-      return { success: false, reason: 'exception', error: err }
+    // 1. Update Base Station telemetry
+    setBaseStation((prev) => ({
+      ...prev,
+      packetsDelivered: (prev.packetsDelivered || 0) + 1,
+      packetsReceived: (prev.packetsReceived || 0) + 1
+    }))
+
+    // 2. Remove delivered message from any sensor messageQueue
+    setMeshSensors((prevSensors) =>
+      prevSensors.map((s) => {
+        if (!s.messageQueue || s.messageQueue.length === 0) return s
+        const nextQ = s.messageQueue.filter(
+          (m) => (m.messageId || m.id) !== pktId && m.incidentId !== deliveredPkt.incidentId
+        )
+        return nextQ.length !== s.messageQueue.length ? { ...s, messageQueue: nextQ } : s
+      })
+    )
+
+    // 3. Mark incident as DELIVERED in state
+    let targetIncident = null
+    setEvents((prev) => {
+      return prev.map((e) => {
+        if (e.id === deliveredPkt.incidentId || e.packetId === deliveredPkt.id || e.id === pktId) {
+          targetIncident = {
+            ...e,
+            deliveryStatus: 'DELIVERED',
+            transmissionStatus: 'DELIVERED',
+            deliveredAt: new Date().toISOString()
+          }
+          return targetIncident
+        }
+        return e
+      })
+    })
+
+    // 4. Email Notification Workflow based on selected mode
+    if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION) {
+      const incId = deliveredPkt.incidentId || 'INCIDENT'
+
+      // Display required confirmation:
+      // BASE STATION RECEIVED INCIDENT INC-XXXX
+      // EMAIL NOTIFICATION SENT
+      setBaseDeliveryToast({
+        incidentId: incId,
+        title: `BASE STATION RECEIVED INCIDENT ${incId}`,
+        message: 'EMAIL NOTIFICATION SENT'
+      })
+
+      // Send the email notification
+      const incToSend = targetIncident || {
+        id: incId,
+        title: 'Acoustic Incident Report',
+        priority: 'high',
+        deliveryStatus: 'DELIVERED'
+      }
+
+      try {
+        const emailRes = await sendIncidentEmailNotification(incToSend)
+        setEvents((prev) =>
+          prev.map((e) =>
+            e.id === incToSend.id
+              ? {
+                  ...e,
+                  emailNotificationStatus: emailRes.success ? 'EMAIL SENT' : 'EMAIL FAILED'
+                }
+              : e
+          )
+        )
+      } catch (err) {
+        console.error('[EcoSentry] Base-station-confirmed email dispatch error:', err)
+      }
+    } else {
+      // Immediate mode (already dispatched at creation) or Disabled
+      setBaseDeliveryToast({
+        incidentId: deliveredPkt.incidentId,
+        title: `BASE STATION RECEIVED PACKET ${deliveredPkt.id}`,
+        message:
+          emailNotificationMode === EMAIL_NOTIFICATION_MODES.DISABLED
+            ? 'NOTIFICATIONS DISABLED'
+            : 'PACKET DELIVERY CONFIRMED'
+      })
+    }
+  }, [emailNotificationMode])
+
+  // Top-Level Mesh Packet Propagation Loop (Steps packets when not on tactical view)
+  const lastPacketTimeRef = useRef(null)
+
+  useEffect(() => {
+    let animId
+    lastPacketTimeRef.current = performance.now()
+
+    const loop = (currentTime) => {
+      const last = lastPacketTimeRef.current || currentTime
+      const delta = (currentTime - last) / 1000
+      lastPacketTimeRef.current = currentTime
+
+      if (activeNav !== 'tactical' && delta > 0 && delta < 0.25) {
+        setPackets((prevPackets) => {
+          if (!prevPackets || prevPackets.length === 0) return prevPackets
+
+          let hasChanges = false
+          const nextPackets = prevPackets.map((pkt) => {
+            if (pkt.status !== 'in_transit' && pkt.status !== 'rerouting') return pkt
+
+            hasChanges = true
+            const clone = { ...pkt }
+            const stepResult = stepMeshPacket(clone, delta, 1.0, (deliveredPkt) => {
+              handlePacketDeliveredAtBase(deliveredPkt)
+            })
+
+            return stepResult.packet
+          })
+
+          return hasChanges ? nextPackets : prevPackets
+        })
+      }
+
+      animId = requestAnimationFrame(loop)
+    }
+
+    animId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(animId)
+  }, [activeNav, handlePacketDeliveredAtBase])
+
+  // Incident Placement Handlers (Drag-and-Drop system & Acoustic Simulation)
+  const handleAddIncident = async (incomingIncident) => {
+    let incidentToSave = { ...incomingIncident }
+
+    // If not already fused, evaluate acoustic hearing range across operational acoustic nodes
+    if (!incidentToSave.isAcousticFused && (incidentToSave.worldPosition || (incidentToSave.coordinates?.x !== undefined && incidentToSave.coordinates?.y !== undefined))) {
+      const detectionResult = detectAcousticEvent(
+        meshSensors,
+        incidentToSave.worldPosition || { gridX: incidentToSave.coordinates.x, gridY: incidentToSave.coordinates.y },
+        incidentToSave.type || 'gunshot_sound'
+      )
+
+      if (detectionResult.heard && detectionResult.detectionCount > 0) {
+        const localization = estimateSourceLocation(detectionResult.detections)
+        const base = baseStation || getBaseStation()
+        const currentGraph = buildMeshGraph(meshSensors, base)
+        const selection = selectPacketOriginator(detectionResult.detections, currentGraph)
+        const bestOriginator = selection.originatingSensorId
+        const bestRoute = selection.route
+
+        incidentToSave = {
+          ...incidentToSave,
+          isAcousticFused: true,
+          detectionCount: detectionResult.detectionCount,
+          detectingSensors: detectionResult.detectingSensorIds,
+          uncertaintyRadius: localization.uncertaintyRadius,
+          localizationMethod: localization.method,
+          confidence: localization.confidence,
+          estimatedPosition: localization.estimatedPosition,
+          packetId: `PKT-${Date.now().toString().slice(-4)}`,
+          nearestSensorId: selection.nearestSensorId,
+          nearestSensorDistance: selection.nearestSensorDistance,
+          originatingSensorId: bestOriginator,
+          originSensorDistance: selection.originSensorDistance,
+          bypassedNearestSensor: selection.bypassedNearestSensor,
+          bypassReason: selection.bypassReason,
+          otherDetectingSensors: selection.otherDetectingSensors,
+          routeToBasestation: bestRoute.path,
+          routeCost: bestRoute.totalCost !== Infinity ? bestRoute.totalCost : 0,
+          transmissionStatus: bestRoute.reachable ? 'in_transit' : 'queued',
+          deliveryStatus: bestRoute.reachable ? 'in_transit' : 'queued',
+          emailNotificationStatus: emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE ? 'SENDING' : 'PENDING_BASE_CONFIRMATION'
+        }
+
+        // Spawn packet / Store-and-Forward message into mesh network
+        const newPacket = createMeshPacket(
+          incidentToSave.packetId,
+          incidentToSave.id,
+          bestOriginator,
+          bestRoute.reachable ? bestRoute.path : [],
+          bestRoute.totalCost !== Infinity ? bestRoute.totalCost : 0,
+          incidentToSave
+        )
+
+        if (bestRoute.reachable && bestRoute.path.length > 1) {
+          setPackets((prev) => [newPacket, ...prev.slice(0, 15)])
+        } else {
+          // Store-and-Forward: Buffer message into originating sensor's local queue!
+          newPacket.status = 'queued'
+          newPacket.rerouteReason = selection.bypassReason || 'No route to BASE (buffered in local sensor queue)'
+
+          setMeshSensors((prevSensors) =>
+            prevSensors.map((s) => {
+              if (s.id !== bestOriginator) return s
+              const enq = enqueueMessageAtSensor(s, newPacket)
+              return enq.sensor
+            })
+          )
+          setPackets((prev) => [newPacket, ...prev.slice(0, 15)])
+        }
+      } else {
+        incidentToSave = {
+          ...incidentToSave,
+          detectionCount: 0,
+          detectingSensors: [],
+          transmissionStatus: 'manual_unrouted',
+          deliveryStatus: 'unrouted',
+          disclaimer: 'Manual incident placement. Coordinates were outside the acoustic hearing range of all operational sensors.',
+          emailNotificationStatus: emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE ? 'SENDING' : 'UNROUTED'
+        }
+      }
+    } else if (incidentToSave.isAcousticFused && incidentToSave.routeToBasestation?.length > 1) {
+      // Spawn packet for incident generated from TacticalRoutingView
+      const newPacket = createMeshPacket(
+        incidentToSave.packetId,
+        incidentToSave.id,
+        incidentToSave.originatingSensorId,
+        incidentToSave.routeToBasestation,
+        incidentToSave.routeCost || 20
+      )
+      setPackets((prev) => [newPacket, ...prev.slice(0, 15)])
+    }
+
+    // 1. Immediately append to state to update UI, map markers, alerts, and trigger localStorage persistence
+    setEvents((prev) => [incidentToSave, ...prev])
+
+    // 2. IMMEDIATE MODE: Dispatch email now
+    if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
+      try {
+        const emailResult = await sendIncidentEmailNotification(incidentToSave)
+        setEvents((prev) =>
+          prev.map((e) =>
+            e.id === incidentToSave.id
+              ? { ...e, emailNotificationStatus: emailResult.success ? 'EMAIL SENT' : 'EMAIL FAILED' }
+              : e
+          )
+        )
+        return { ...emailResult, incident: incidentToSave }
+      } catch (err) {
+        console.error('[EcoSentry] Unexpected error during immediate email dispatch:', err)
+        return { success: false, reason: 'exception', error: err, incident: incidentToSave }
+      }
+    }
+
+    // 3. AFTER BASE STATION RECEIVES PACKET or DISABLED:
+    // Email is NOT sent at incident creation! It is sent ONLY after the packet reaches BASE.
+    return {
+      success: true,
+      pending: emailNotificationMode === EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION,
+      mode: emailNotificationMode,
+      incident: incidentToSave
     }
   }
 
@@ -320,15 +623,17 @@ export default function App() {
   }
 
   return (
-    <div className="dashboard-container">
-      {/* 1. ENTERPRISE SIDEBAR NAVIGATION */}
-      <Sidebar
-        activeNav={activeNav}
-        setActiveNav={setActiveNav}
-        stats={stats}
-      />
+    <div className={`dashboard-container ${activeNav === 'tactical' ? 'tactical-mode-active' : ''}`}>
+      {/* 1. ENTERPRISE SIDEBAR NAVIGATION (Hidden in Tactical Mode for full-screen immersion) */}
+      {activeNav !== 'tactical' && (
+        <Sidebar
+          activeNav={activeNav}
+          setActiveNav={setActiveNav}
+          stats={stats}
+        />
+      )}
 
-      <div className="main-wrapper">
+      <div className={`main-wrapper ${activeNav === 'tactical' ? 'tactical-wrapper-active' : ''}`}>
         {/* 2. MINIMAL TOP HEADER */}
         <TopNav
           activeNav={activeNav}
@@ -340,10 +645,11 @@ export default function App() {
           onSimulateIncident={handleSimulateIncident}
           stats={stats}
           onOpenNotifications={() => setActiveNav('threats')}
+          onNavigateToOverview={() => setActiveNav('overview')}
         />
 
         {/* 3. MAIN DASHBOARD CONTENT */}
-        <main className="content-body">
+        <main className={`content-body ${activeNav === 'tactical' ? 'content-body-tactical' : ''}`}>
           {/* TAB: OVERVIEW (Default Security Command Center) */}
           {activeNav === 'overview' && (
             <>
@@ -401,6 +707,8 @@ export default function App() {
                   focusTarget={focusTarget}
                   repositionTarget={repositionTarget}
                   onClearRepositionTarget={() => setRepositionTarget(null)}
+                  onNavigateToTactical={() => setActiveNav('tactical')}
+                  emailNotificationMode={emailNotificationMode}
                 />
 
                 <ThreatAlertsPanel
@@ -459,6 +767,32 @@ export default function App() {
                 focusTarget={focusTarget}
                 repositionTarget={repositionTarget}
                 onClearRepositionTarget={() => setRepositionTarget(null)}
+                onNavigateToTactical={() => setActiveNav('tactical')}
+                emailNotificationMode={emailNotificationMode}
+              />
+            </div>
+          )}
+
+          {/* TAB: TACTICAL ROUTING & MESH NETWORK MAP */}
+          {activeNav === 'tactical' && (
+            <div className="tactical-fullscreen-wrapper">
+              <TacticalRoutingView
+                sensors={meshSensors}
+                setSensors={setMeshSensors}
+                baseStation={baseStation}
+                setBaseStation={setBaseStation}
+                packets={packets}
+                setPackets={setPackets}
+                emailNotificationMode={emailNotificationMode}
+                onChangeEmailMode={setEmailNotificationMode}
+                events={events}
+                customToolboxItems={customToolboxItems}
+                onAddCustomToolboxItem={handleAddCustomToolboxItem}
+                onDeleteCustomToolboxItem={handleDeleteCustomToolboxItem}
+                onAddIncident={handleAddIncident}
+                onPacketDelivered={handlePacketDeliveredAtBase}
+                onSwitchToForestMap={() => setActiveNav('map')}
+                onNavigateToOverview={() => setActiveNav('overview')}
               />
             </div>
           )}
@@ -532,7 +866,10 @@ export default function App() {
 
           {/* TAB: SETTINGS & CALIBRATION */}
           {activeNav === 'settings' && (
-            <SettingsView />
+            <SettingsView
+              emailNotificationMode={emailNotificationMode}
+              setEmailNotificationMode={setEmailNotificationMode}
+            />
           )}
         </main>
       </div>
@@ -548,6 +885,24 @@ export default function App() {
         onEditEvent={handleEditIncident}
         onDeleteEvent={handleDeleteIncident}
       />
+
+      {/* BASE STATION PACKET RECEIPT & EMAIL SENT NOTIFICATION TOAST */}
+      {baseDeliveryToast && (
+        <div className="base-delivery-alert-toast" role="alert">
+          <div className="toast-pulse-cyan" />
+          <div className="toast-content-col">
+            <span className="toast-title-bold">{baseDeliveryToast.title}</span>
+            <span className="toast-sub-msg">{baseDeliveryToast.message}</span>
+          </div>
+          <button
+            className="toast-close-x"
+            onClick={() => setBaseDeliveryToast(null)}
+            aria-label="Dismiss toast"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -19,7 +19,29 @@ import {
   sendIncidentEmailNotification
 } from '../services/emailService'
 
-export default function SettingsView() {
+export default function SettingsView({
+  emailNotificationMode: externalMode,
+  setEmailNotificationMode: externalSetMode
+}) {
+  const [internalMode, setInternalMode] = useState(() => {
+    try {
+      return localStorage.getItem('ecosentry_email_notification_mode') || 'AFTER BASE STATION RECEIVES PACKET'
+    } catch {
+      return 'AFTER BASE STATION RECEIVES PACKET'
+    }
+  })
+
+  const emailNotificationMode = externalMode || internalMode
+  const handleSelectMode = (mode) => {
+    try {
+      localStorage.setItem('ecosentry_email_notification_mode', mode)
+    } catch (e) {
+      console.warn('Failed to save email notification mode:', e)
+    }
+    if (externalSetMode) externalSetMode(mode)
+    else setInternalMode(mode)
+  }
+
   const [acousticThreshold, setAcousticThreshold] = useState(80)
   const [cameraThreshold, setCameraThreshold] = useState(85)
   const [watchdogInterval, setWatchdogInterval] = useState('30')
@@ -242,7 +264,7 @@ export default function SettingsView() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
               <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                Every successful drag-and-drop incident creation on the 3D map automatically sends an alert email.
+                Email delivery depends on the configured <strong>Email Notification Mode</strong> below and valid EmailJS credentials.
               </span>
 
               <button
@@ -276,6 +298,148 @@ export default function SettingsView() {
                 <span>{testEmailStatus.message}</span>
               </div>
             )}
+          </div>
+
+          {/* Group 3B: EMAIL NOTIFICATION MODE SETTING */}
+          <div className="settings-section-card" style={{ border: '1px solid var(--accent-teal, #06b6d4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={15} style={{ color: '#06b6d4' }} />
+                <h4 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
+                  Email Notification Mode
+                </h4>
+              </div>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-mono)',
+                  color: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  fontWeight: 700
+                }}
+              >
+                CURRENT: {emailNotificationMode}
+              </span>
+            </div>
+
+            <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>
+              Configure when automated EmailJS alert emails are transmitted during incident surveillance and mesh routing.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Option 1: Base Station Confirmed (Default) */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: `1.5px solid ${emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET' ? '#06b6d4' : 'var(--border-subtle, #E2E8F0)'}`,
+                  background: emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET' ? 'rgba(6, 182, 212, 0.06)' : 'var(--bg-surface, #FFFFFF)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <input
+                  type="radio"
+                  name="emailNotificationModeRadio"
+                  value="AFTER BASE STATION RECEIVES PACKET"
+                  checked={emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'}
+                  onChange={() => handleSelectMode('AFTER BASE STATION RECEIVES PACKET')}
+                  style={{ marginTop: '3px', accentColor: '#06b6d4' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Base Station Confirmed
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        color: '#06b6d4',
+                        background: 'rgba(6, 182, 212, 0.15)',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        letterSpacing: '0.04em'
+                      }}
+                    >
+                      RECOMMENDED · DEFAULT
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Send an email only after the incident packet successfully travels through the mesh network and reaches the base station.
+                  </span>
+                </div>
+              </label>
+
+              {/* Option 2: Immediate */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: `1.5px solid ${emailNotificationMode === 'IMMEDIATE' ? '#06b6d4' : 'var(--border-subtle, #E2E8F0)'}`,
+                  background: emailNotificationMode === 'IMMEDIATE' ? 'rgba(6, 182, 212, 0.06)' : 'var(--bg-surface, #FFFFFF)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <input
+                  type="radio"
+                  name="emailNotificationModeRadio"
+                  value="IMMEDIATE"
+                  checked={emailNotificationMode === 'IMMEDIATE'}
+                  onChange={() => handleSelectMode('IMMEDIATE')}
+                  style={{ marginTop: '3px', accentColor: '#06b6d4' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Immediate
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Send an email when an incident is created.
+                  </span>
+                </div>
+              </label>
+
+              {/* Option 3: Disabled */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: `1.5px solid ${emailNotificationMode === 'DISABLED' ? '#ef4444' : 'var(--border-subtle, #E2E8F0)'}`,
+                  background: emailNotificationMode === 'DISABLED' ? 'rgba(239, 68, 68, 0.06)' : 'var(--bg-surface, #FFFFFF)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <input
+                  type="radio"
+                  name="emailNotificationModeRadio"
+                  value="DISABLED"
+                  checked={emailNotificationMode === 'DISABLED'}
+                  onChange={() => handleSelectMode('DISABLED')}
+                  style={{ marginTop: '3px', accentColor: '#ef4444' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Disabled
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Do not send email notifications.
+                  </span>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Group 4: Coordinate Reference System */}

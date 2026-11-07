@@ -16,7 +16,8 @@ import {
   X,
   Mail,
   MailCheck,
-  MailX
+  MailX,
+  Share2
 } from 'lucide-react'
 
 import ForestCanvas from './ForestCanvas'
@@ -42,7 +43,9 @@ export default function ForestMapContainer({
   onDeleteCustomToolboxItem,
   focusTarget,
   repositionTarget,
-  onClearRepositionTarget
+  onClearRepositionTarget,
+  onNavigateToTactical,
+  emailNotificationMode = 'AFTER BASE STATION RECEIVES PACKET'
 }) {
   // View mode: '3d' (default) or '2d' (satellite fallback)
   const [viewMode, setViewMode] = useState('3d')
@@ -206,19 +209,32 @@ export default function ForestMapContainer({
           const emailPromise = onAddIncident?.(newIncident)
           const hasEmailConfig = isEmailConfigured()
 
+          let initialEmailStatus = null
+          if (hasEmailConfig) {
+            if (emailNotificationMode === 'IMMEDIATE') {
+              initialEmailStatus = 'sending'
+            } else if (emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET') {
+              initialEmailStatus = 'pending_mesh'
+            }
+          }
+
           setDropToast({
             title: newIncident.title,
             zoneName: detectedZone.name,
             icon: newIncident.icon,
             event: newIncident,
             message: `Logged at ${detectedZone.name} [${Number(gridX.toFixed(1))}, ${Number(gridY.toFixed(1))}]`,
-            emailStatus: hasEmailConfig ? 'sending' : null
+            emailStatus: initialEmailStatus
           })
 
           if (emailPromise && typeof emailPromise.then === 'function') {
             emailPromise
               .then((res) => {
-                if (res?.success) {
+                if (res?.pending) {
+                  setDropToast((prev) =>
+                    prev ? { ...prev, emailStatus: 'pending_mesh' } : null
+                  )
+                } else if (res?.success && emailNotificationMode === 'IMMEDIATE') {
                   setDropToast((prev) =>
                     prev ? { ...prev, emailStatus: 'sent' } : null
                   )
@@ -318,6 +334,17 @@ export default function ForestMapContainer({
               <MapIcon size={12} />
               <span>Satellite</span>
             </button>
+            {onNavigateToTactical && (
+              <button
+                className="btn-toggle-option"
+                onClick={onNavigateToTactical}
+                title="Switch to Tactical Mesh Network & Dijkstra Routing Map"
+                style={{ color: '#00f0ff' }}
+              >
+                <Share2 size={12} />
+                <span>Tactical routing</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -559,6 +586,12 @@ export default function ForestMapContainer({
             <div className="toast-info">
               <div className="toast-title-row">
                 <span className="toast-title">{dropToast.title} Placed</span>
+                {dropToast.emailStatus === 'pending_mesh' && (
+                  <span className="toast-email-badge sending" style={{ backgroundColor: '#E0F2FE', color: '#0369A1', borderColor: '#BAE6FD' }} title="Email alert will send when packet reaches Base Station">
+                    <Mail size={11} />
+                    <span>Email pending Base confirmation</span>
+                  </span>
+                )}
                 {dropToast.emailStatus === 'sending' && (
                   <span className="toast-email-badge sending" title="Sending email notification via EmailJS">
                     <Mail size={11} className="email-spin-icon" />

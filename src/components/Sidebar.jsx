@@ -13,7 +13,8 @@ import {
   ChevronRight,
   CheckCircle2,
   AlertTriangle,
-  Layers
+  Layers,
+  Share2
 } from 'lucide-react'
 
 export default function Sidebar({ activeNav, setActiveNav, stats }) {
@@ -77,6 +78,17 @@ export default function Sidebar({ activeNav, setActiveNav, stats }) {
             <div className="nav-item-left">
               <Compass size={16} />
               {!collapsed && <span className="nav-label">3D Forest Map</span>}
+            </div>
+          </button>
+
+          <button
+            className={`nav-item ${activeNav === 'tactical' ? 'active' : ''}`}
+            onClick={() => setActiveNav('tactical')}
+            title="Tactical Mesh Network & Adaptive Dijkstra Routing"
+          >
+            <div className="nav-item-left">
+              <Share2 size={16} style={{ color: activeNav === 'tactical' ? '#00f0ff' : undefined }} />
+              {!collapsed && <span className="nav-label">Tactical Routing</span>}
             </div>
           </button>
 

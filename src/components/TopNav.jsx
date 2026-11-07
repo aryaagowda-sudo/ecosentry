@@ -19,6 +19,7 @@ const NAV_BREADCRUMBS = {
   sensors: { section: 'Hardware network', label: 'Sensor grid management' },
   wildlife: { section: 'Biodiversity monitoring', label: 'Wildlife sightings' },
   analytics: { section: 'Intelligence reporting', label: 'Operations analytics' },
+  tactical: { section: 'Mesh intelligence', label: 'Tactical routing & swarm' },
   settings: { section: 'System parameters', label: 'Surveillance calibration' }
 }
 
@@ -31,7 +32,8 @@ export default function TopNav({
   setSearchQuery,
   onSimulateIncident,
   stats,
-  onOpenNotifications
+  onOpenNotifications,
+  onNavigateToOverview
 }) {
   const activeThreats = stats?.incidents?.active || 0
   const offlineSensors = stats?.connectivity?.offline || 0
@@ -42,7 +44,16 @@ export default function TopNav({
       <div className="header-left">
         {/* Breadcrumb Trail */}
         <div className="breadcrumb-trail">
-          <span className="breadcrumb-section">{breadcrumb.section}</span>
+          <span
+            className="breadcrumb-section"
+            style={{ cursor: activeNav !== 'overview' && onNavigateToOverview ? 'pointer' : 'default' }}
+            onClick={() => {
+              if (activeNav !== 'overview') onNavigateToOverview?.()
+            }}
+            title={activeNav !== 'overview' ? 'Click to return to Operations Overview' : undefined}
+          >
+            {breadcrumb.section}
+          </span>
           <ChevronRight size={13} className="breadcrumb-separator" />
           <span className="breadcrumb-current">{breadcrumb.label}</span>
         </div>

@@ -1,6 +1,20 @@
 import emailjs from '@emailjs/browser'
 
 /**
+ * Supported Email Notification Modes:
+ * - IMMEDIATE: Send email when an incident is created.
+ * - AFTER BASE STATION RECEIVES PACKET: Send email only after incident packet reaches base station.
+ * - DISABLED: Do not send email notifications.
+ */
+export const EMAIL_NOTIFICATION_MODES = {
+  IMMEDIATE: 'IMMEDIATE',
+  AFTER_BASE_STATION: 'AFTER BASE STATION RECEIVES PACKET',
+  DISABLED: 'DISABLED'
+}
+
+export const DEFAULT_EMAIL_NOTIFICATION_MODE = EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION
+
+/**
  * Retrieves EmailJS configuration parameters from Vite environment variables.
  * Safe for client-side execution (uses public key only).
  */
@@ -70,13 +84,18 @@ export const formatIncidentEmailParams = (incident) => {
     `Grid Coordinates: ${gridCoordsStr}`,
     `Timestamp:        ${incident.timestamp || new Date().toISOString()}`,
     `Current Status:   ${incident.status || 'active'}`,
-    `Detection Source: ${incident.source || 'Manual 3D Terrain Placement'}`,
+    `Detection Source: ${incident.source || (incident.isAcousticFused ? 'Fused Multi-Sensor Acoustic Telemetry' : 'Manual 3D Terrain Placement')}`,
+    incident.detectionCount ? `Acoustic Sensors: ${incident.detectionCount} confirmed (${incident.detectingSensors?.join(', ') || ''})` : null,
+    incident.uncertaintyRadius ? `Uncertainty Area: R = ${incident.uncertaintyRadius} simulated units (${incident.localizationMethod || 'Estimated'})` : null,
+    incident.packetId ? `Mesh Routing:     Packet ${incident.packetId} via ${incident.originatingSensorId || 'Sensor'} -> BASE` : null,
     `--------------------------------------------------`,
     `Operational Description:`,
     incident.description || 'No description provided.',
     `--------------------------------------------------`,
-    `Field Verification: Manual incident logged on reserve terrain via 3D interactive placement. Ranger dispatch protocol initiated.`
-  ].join('\n')
+    incident.isAcousticFused
+      ? `Field Verification: Fused multi-sensor acoustic event simulated in forest reserve. Ground ranger dispatch protocol initiated.`
+      : `Field Verification: Manual incident logged on reserve terrain via 3D interactive placement. Ranger dispatch protocol initiated.`
+  ].filter(Boolean).join('\n')
 
   return {
     // Primary identifiers
@@ -108,8 +127,17 @@ export const formatIncidentEmailParams = (incident) => {
     timestamp: incident.timestamp || new Date().toISOString(),
     time_ago: incident.timeAgo || 'Just now',
     description: incident.description || '',
-    source: incident.source || 'Manual Field Report',
+    source: incident.source || (incident.isAcousticFused ? 'Fused Multi-Sensor Acoustic Telemetry' : 'Manual Field Report'),
     disclaimer: incident.disclaimer || '',
+
+    // Fused Multi-Sensor & Mesh Network Metadata
+    detection_count: incident.detectionCount ?? 1,
+    detecting_sensors: Array.isArray(incident.detectingSensors) ? incident.detectingSensors.join(', ') : '',
+    uncertainty_radius: incident.uncertaintyRadius ? `${incident.uncertaintyRadius} simulated units` : '',
+    localization_method: incident.localizationMethod || '',
+    packet_id: incident.packetId || '',
+    originating_sensor: incident.originatingSensorId || '',
+    transmission_status: incident.transmissionStatus || 'in_transit',
 
     // Standard Email Envelope Fields
     subject: `[EcoSentry ALERT] ${priorityUpper}: ${incident.title} in ${incident.zoneName || 'Reserve'}`,
