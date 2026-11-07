@@ -19,6 +19,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { getStoreAndForwardMetrics } from '../../services/meshNetwork/storeAndForward.js'
+import { DEFAULT_EMAIL_NOTIFICATION_MODE } from '../../services/emailService.js'
 
 export default function TacticalSidebar({
   isCollapsed = false,
@@ -47,7 +48,7 @@ export default function TacticalSidebar({
   defaultAcousticRange = 28,
   onChangeDefaultAcousticRange,
   // Email Notification Mode
-  emailNotificationMode = 'AFTER BASE STATION RECEIVES PACKET',
+  emailNotificationMode = DEFAULT_EMAIL_NOTIFICATION_MODE,
   onChangeEmailMode,
   // Sensor Actions
   onSelectNode,
@@ -536,6 +537,44 @@ export default function TacticalSidebar({
                   <span>All queues clear • Direct route forwarding operational</span>
                 </div>
               )}
+
+              {/* Email Notification Status Banner */}
+              <div
+                className="sf-notification-status-bar"
+                style={{
+                  marginTop: '12px',
+                  padding: '7px 10px',
+                  borderRadius: '4px',
+                  border:
+                    emailNotificationMode === 'DISABLED'
+                      ? '1px solid rgba(239, 68, 68, 0.35)'
+                      : '1px solid rgba(6, 182, 212, 0.35)',
+                  backgroundColor:
+                    emailNotificationMode === 'DISABLED'
+                      ? 'rgba(239, 68, 68, 0.08)'
+                      : 'rgba(6, 182, 212, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '10.5px'
+                }}
+              >
+                <span style={{ color: '#94a3b8', fontWeight: 600, letterSpacing: '0.04em' }}>
+                  EMAIL NOTIFICATIONS:
+                </span>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    color: emailNotificationMode === 'DISABLED' ? '#ef4444' : '#00f0ff'
+                  }}
+                >
+                  {emailNotificationMode === 'DISABLED'
+                    ? 'DISABLED'
+                    : emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'
+                    ? 'ENABLED (BASE CONFIRMED)'
+                    : 'ENABLED (IMMEDIATE)'}
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -679,14 +718,27 @@ export default function TacticalSidebar({
               {/* Email Notification Mode Quick Selector */}
               <div className="range-slider-group">
                 <div className="slider-label-row">
-                  <span>Email Notification Mode:</span>
-                  <span className="slider-val cyan" style={{ fontSize: '9px' }}>
-                    {emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'
+                  <span>EMAIL NOTIFICATIONS:</span>
+                  <span
+                    className={`slider-val ${emailNotificationMode === 'DISABLED' ? 'red' : 'cyan'}`}
+                    style={{ fontSize: '10px', fontWeight: 700 }}
+                  >
+                    {emailNotificationMode === 'DISABLED'
+                      ? 'DISABLED'
+                      : emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'
                       ? 'BASE CONFIRMED'
-                      : emailNotificationMode}
+                      : 'IMMEDIATE'}
                   </span>
                 </div>
                 <div className="btn-toggle-cluster" style={{ width: '100%' }}>
+                  <button
+                    className={`btn-toggle-option ${emailNotificationMode === 'DISABLED' ? 'active' : ''}`}
+                    onClick={() => onChangeEmailMode?.('DISABLED')}
+                    style={{ flex: 1, textAlign: 'center' }}
+                    title="Disable email notifications (Default)"
+                  >
+                    DISABLED
+                  </button>
                   <button
                     className={`btn-toggle-option ${emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET' ? 'active' : ''}`}
                     onClick={() => onChangeEmailMode?.('AFTER BASE STATION RECEIVES PACKET')}
@@ -702,14 +754,6 @@ export default function TacticalSidebar({
                     title="Send email immediately upon incident creation"
                   >
                     IMMEDIATE
-                  </button>
-                  <button
-                    className={`btn-toggle-option ${emailNotificationMode === 'DISABLED' ? 'active' : ''}`}
-                    onClick={() => onChangeEmailMode?.('DISABLED')}
-                    style={{ flex: 1, textAlign: 'center' }}
-                    title="Disable email notifications"
-                  >
-                    DISABLED
                   </button>
                 </div>
               </div>

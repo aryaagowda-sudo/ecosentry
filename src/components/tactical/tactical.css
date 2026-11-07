@@ -793,6 +793,7 @@
 
 .slider-val.cyan { color: #00f0ff; font-weight: 700; }
 .slider-val.amber { color: #f59e0b; font-weight: 700; }
+.slider-val.red { color: #ef4444; font-weight: 700; }
 
 .tactical-slider {
   width: 100%;

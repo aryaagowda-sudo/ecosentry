@@ -16,7 +16,9 @@ import {
 import {
   getEmailConfig,
   isEmailConfigured,
-  sendIncidentEmailNotification
+  sendIncidentEmailNotification,
+  EMAIL_NOTIFICATION_MODES,
+  DEFAULT_EMAIL_NOTIFICATION_MODE
 } from '../services/emailService'
 
 export default function SettingsView({
@@ -25,10 +27,14 @@ export default function SettingsView({
 }) {
   const [internalMode, setInternalMode] = useState(() => {
     try {
-      return localStorage.getItem('ecosentry_email_notification_mode') || 'AFTER BASE STATION RECEIVES PACKET'
+      const saved = localStorage.getItem('ecosentry_email_notification_mode')
+      if (saved && Object.values(EMAIL_NOTIFICATION_MODES).includes(saved)) {
+        return saved
+      }
     } catch {
-      return 'AFTER BASE STATION RECEIVES PACKET'
+      // fallback
     }
+    return DEFAULT_EMAIL_NOTIFICATION_MODE
   })
 
   const emailNotificationMode = externalMode || internalMode
@@ -329,7 +335,54 @@ export default function SettingsView({
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* Option 1: Base Station Confirmed (Default) */}
+              {/* Option 1: Disabled (Default) */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: `1.5px solid ${emailNotificationMode === 'DISABLED' ? '#ef4444' : 'var(--border-subtle, #E2E8F0)'}`,
+                  background: emailNotificationMode === 'DISABLED' ? 'rgba(239, 68, 68, 0.06)' : 'var(--bg-surface, #FFFFFF)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <input
+                  type="radio"
+                  name="emailNotificationModeRadio"
+                  value="DISABLED"
+                  checked={emailNotificationMode === 'DISABLED'}
+                  onChange={() => handleSelectMode('DISABLED')}
+                  style={{ marginTop: '3px', accentColor: '#ef4444' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Disabled
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        color: '#ef4444',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        padding: '1px 6px',
+                        borderRadius: '3px',
+                        letterSpacing: '0.04em'
+                      }}
+                    >
+                      DEFAULT
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Do not send email notifications. Incident routing, mesh hops, and base station reception operate normally.
+                  </span>
+                </div>
+              </label>
+
+              {/* Option 2: Base Station Confirmed */}
               <label
                 style={{
                   display: 'flex',
@@ -352,31 +405,16 @@ export default function SettingsView({
                   style={{ marginTop: '3px', accentColor: '#06b6d4' }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Base Station Confirmed
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        color: '#06b6d4',
-                        background: 'rgba(6, 182, 212, 0.15)',
-                        padding: '1px 6px',
-                        borderRadius: '3px',
-                        letterSpacing: '0.04em'
-                      }}
-                    >
-                      RECOMMENDED · DEFAULT
-                    </span>
-                  </div>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Base Station Confirmed
+                  </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     Send an email only after the incident packet successfully travels through the mesh network and reaches the base station.
                   </span>
                 </div>
               </label>
 
-              {/* Option 2: Immediate */}
+              {/* Option 3: Immediate */}
               <label
                 style={{
                   display: 'flex',
@@ -404,38 +442,6 @@ export default function SettingsView({
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                     Send an email when an incident is created.
-                  </span>
-                </div>
-              </label>
-
-              {/* Option 3: Disabled */}
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '6px',
-                  border: `1.5px solid ${emailNotificationMode === 'DISABLED' ? '#ef4444' : 'var(--border-subtle, #E2E8F0)'}`,
-                  background: emailNotificationMode === 'DISABLED' ? 'rgba(239, 68, 68, 0.06)' : 'var(--bg-surface, #FFFFFF)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <input
-                  type="radio"
-                  name="emailNotificationModeRadio"
-                  value="DISABLED"
-                  checked={emailNotificationMode === 'DISABLED'}
-                  onChange={() => handleSelectMode('DISABLED')}
-                  style={{ marginTop: '3px', accentColor: '#ef4444' }}
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Disabled
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    Do not send email notifications.
                   </span>
                 </div>
               </label>

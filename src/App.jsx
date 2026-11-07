@@ -328,7 +328,7 @@ export default function App() {
       }
 
       try {
-        const emailRes = await sendIncidentEmailNotification(incToSend)
+        const emailRes = await sendIncidentEmailNotification(incToSend, emailNotificationMode)
         setEvents((prev) =>
           prev.map((e) =>
             e.id === incToSend.id
@@ -436,7 +436,12 @@ export default function App() {
           routeCost: bestRoute.totalCost !== Infinity ? bestRoute.totalCost : 0,
           transmissionStatus: bestRoute.reachable ? 'in_transit' : 'queued',
           deliveryStatus: bestRoute.reachable ? 'in_transit' : 'queued',
-          emailNotificationStatus: emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE ? 'SENDING' : 'PENDING_BASE_CONFIRMATION'
+          emailNotificationStatus:
+            emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
+              ? 'SENDING'
+              : emailNotificationMode === EMAIL_NOTIFICATION_MODES.DISABLED
+              ? 'DISABLED'
+              : 'PENDING_BASE_CONFIRMATION'
         }
 
         // Spawn packet / Store-and-Forward message into mesh network
@@ -473,7 +478,12 @@ export default function App() {
           transmissionStatus: 'manual_unrouted',
           deliveryStatus: 'unrouted',
           disclaimer: 'Manual incident placement. Coordinates were outside the acoustic hearing range of all operational sensors.',
-          emailNotificationStatus: emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE ? 'SENDING' : 'UNROUTED'
+          emailNotificationStatus:
+            emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
+              ? 'SENDING'
+              : emailNotificationMode === EMAIL_NOTIFICATION_MODES.DISABLED
+              ? 'DISABLED'
+              : 'UNROUTED'
         }
       }
     } else if (incidentToSave.isAcousticFused && incidentToSave.routeToBasestation?.length > 1) {
@@ -494,7 +504,7 @@ export default function App() {
     // 2. IMMEDIATE MODE: Dispatch email now
     if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
       try {
-        const emailResult = await sendIncidentEmailNotification(incidentToSave)
+        const emailResult = await sendIncidentEmailNotification(incidentToSave, emailNotificationMode)
         setEvents((prev) =>
           prev.map((e) =>
             e.id === incidentToSave.id

@@ -24,7 +24,7 @@ import ForestCanvas from './ForestCanvas'
 import SimulatedForestMap from '../SimulatedForestMap' // Preserved 2D tactical view
 import IncidentToolbox from './IncidentToolbox'
 import { getZoneFromGridCoords, gridToSimulatedLatLng } from './terrainHelper'
-import { isEmailConfigured } from '../../services/emailService'
+import { isEmailConfigured, DEFAULT_EMAIL_NOTIFICATION_MODE } from '../../services/emailService'
 
 export default function ForestMapContainer({
   zones,
@@ -45,7 +45,7 @@ export default function ForestMapContainer({
   repositionTarget,
   onClearRepositionTarget,
   onNavigateToTactical,
-  emailNotificationMode = 'AFTER BASE STATION RECEIVES PACKET'
+  emailNotificationMode = DEFAULT_EMAIL_NOTIFICATION_MODE
 }) {
   // View mode: '3d' (default) or '2d' (satellite fallback)
   const [viewMode, setViewMode] = useState('3d')

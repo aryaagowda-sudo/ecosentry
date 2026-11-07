@@ -28,7 +28,7 @@ import {
   getZoneFromGridCoords,
   gridToSimulatedLatLng
 } from '../forest3d/terrainHelper.js'
-import { isEmailConfigured } from '../../services/emailService.js'
+import { isEmailConfigured, DEFAULT_EMAIL_NOTIFICATION_MODE } from '../../services/emailService.js'
 
 import './tactical.css'
 
@@ -39,7 +39,7 @@ export default function TacticalRoutingView({
   setBaseStation: externalSetBaseStation,
   packets: externalPackets,
   setPackets: externalSetPackets,
-  emailNotificationMode = 'AFTER BASE STATION RECEIVES PACKET',
+  emailNotificationMode = DEFAULT_EMAIL_NOTIFICATION_MODE,
   onChangeEmailMode,
   events: sharedEvents = [],
   customToolboxItems = [],
@@ -356,6 +356,8 @@ export default function TacticalRoutingView({
             initialEmailStatus = 'sending'
           } else if (emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET') {
             initialEmailStatus = 'pending_mesh'
+          } else {
+            initialEmailStatus = 'disabled'
           }
         }
 

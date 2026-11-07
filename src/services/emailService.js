@@ -7,12 +7,12 @@ import emailjs from '@emailjs/browser'
  * - DISABLED: Do not send email notifications.
  */
 export const EMAIL_NOTIFICATION_MODES = {
+  DISABLED: 'DISABLED',
   IMMEDIATE: 'IMMEDIATE',
-  AFTER_BASE_STATION: 'AFTER BASE STATION RECEIVES PACKET',
-  DISABLED: 'DISABLED'
+  AFTER_BASE_STATION: 'AFTER BASE STATION RECEIVES PACKET'
 }
 
-export const DEFAULT_EMAIL_NOTIFICATION_MODE = EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION
+export const DEFAULT_EMAIL_NOTIFICATION_MODE = EMAIL_NOTIFICATION_MODES.DISABLED
 
 /**
  * Retrieves EmailJS configuration parameters from Vite environment variables.
@@ -150,13 +150,22 @@ export const formatIncidentEmailParams = (incident) => {
 
 /**
  * Dispatches an automated incident email notification via EmailJS.
- * Only sends when valid configuration is present. Gracefully handles unconfigured
- * environments and network errors without throwing or blocking UI execution.
+ * Only sends when valid configuration is present and mode is not DISABLED.
+ * Gracefully handles unconfigured environments and network errors without throwing or blocking UI execution.
  *
  * @param {Object} incident - The created incident report
+ * @param {string} [mode] - Optional current notification mode
  * @returns {Promise<{ success: boolean, status?: number, text?: string, reason?: string, error?: any }>}
  */
-export const sendIncidentEmailNotification = async (incident) => {
+export const sendIncidentEmailNotification = async (incident, mode = null) => {
+  if (mode === EMAIL_NOTIFICATION_MODES.DISABLED) {
+    return {
+      success: false,
+      reason: 'disabled',
+      message: 'Email notifications are disabled.'
+    }
+  }
+
   if (!incident) {
     console.warn('[EcoSentry EmailJS] No incident provided for email dispatch.')
     return { success: false, reason: 'empty_payload' }

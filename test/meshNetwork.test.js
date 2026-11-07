@@ -273,11 +273,45 @@ describe('6. Packet Transmission & Dynamic Failover', () => {
 })
 
 describe('7. Base-Station-Confirmed Email Notification Workflow', () => {
-  it('defaults to AFTER BASE STATION RECEIVES PACKET mode with 3 defined modes', () => {
-    assert.equal(DEFAULT_EMAIL_NOTIFICATION_MODE, 'AFTER BASE STATION RECEIVES PACKET')
+  it('defaults to DISABLED mode with 3 defined modes', () => {
+    assert.equal(DEFAULT_EMAIL_NOTIFICATION_MODE, 'DISABLED')
+    assert.equal(EMAIL_NOTIFICATION_MODES.DISABLED, 'DISABLED')
     assert.equal(EMAIL_NOTIFICATION_MODES.IMMEDIATE, 'IMMEDIATE')
     assert.equal(EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION, 'AFTER BASE STATION RECEIVES PACKET')
-    assert.equal(EMAIL_NOTIFICATION_MODES.DISABLED, 'DISABLED')
+  })
+
+  it('persists notification mode in localStorage and defaults to DISABLED when empty', () => {
+    // Simulating localStorage behavior
+    const mockStorage = new Map()
+
+    const getInitialNotificationMode = (storage) => {
+      try {
+        const saved = storage.get('ecosentry_email_notification_mode')
+        if (saved && Object.values(EMAIL_NOTIFICATION_MODES).includes(saved)) {
+          return saved
+        }
+      } catch {}
+      return DEFAULT_EMAIL_NOTIFICATION_MODE
+    }
+
+    // 1. Initial application load: empty localStorage -> must be DISABLED
+    assert.equal(getInitialNotificationMode(mockStorage), 'DISABLED')
+
+    // 2. User manually selects AFTER_BASE_STATION
+    mockStorage.set('ecosentry_email_notification_mode', EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION)
+    assert.equal(getInitialNotificationMode(mockStorage), 'AFTER BASE STATION RECEIVES PACKET')
+
+    // 3. User manually selects IMMEDIATE
+    mockStorage.set('ecosentry_email_notification_mode', EMAIL_NOTIFICATION_MODES.IMMEDIATE)
+    assert.equal(getInitialNotificationMode(mockStorage), 'IMMEDIATE')
+
+    // 4. User manually switches back to DISABLED
+    mockStorage.set('ecosentry_email_notification_mode', EMAIL_NOTIFICATION_MODES.DISABLED)
+    assert.equal(getInitialNotificationMode(mockStorage), 'DISABLED')
+
+    // 5. Corrupted / invalid value in localStorage -> gracefully falls back to DISABLED
+    mockStorage.set('ecosentry_email_notification_mode', 'INVALID_MODE')
+    assert.equal(getInitialNotificationMode(mockStorage), 'DISABLED')
   })
 
   it('decouples creation from notification in AFTER BASE STATION mode', () => {
@@ -345,26 +379,52 @@ describe('7. Base-Station-Confirmed Email Notification Workflow', () => {
     assert.notEqual(packet.status, 'delivered')
   })
 
-  it('suppresses all email dispatches when notification mode is DISABLED', () => {
+  it('suppresses all email dispatches when notification mode is DISABLED while packet routing operates 100%', () => {
     const mode = EMAIL_NOTIFICATION_MODES.DISABLED
     let emailsSent = 0
     const mockSendEmail = () => { emailsSent++ }
 
-    // Creation under DISABLED mode
-    if (mode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
-      mockSendEmail()
+    // Incident creation under DISABLED mode
+    const incident = {
+      id: 'INC-103',
+      title: 'Chainsaw Sound',
+      deliveryStatus: 'in_transit',
+      emailNotificationStatus:
+        mode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
+          ? 'SENDING'
+          : mode === EMAIL_NOTIFICATION_MODES.DISABLED
+          ? 'DISABLED'
+          : 'PENDING_BASE_CONFIRMATION'
     }
+
+    assert.equal(incident.emailNotificationStatus, 'DISABLED')
     assert.equal(emailsSent, 0)
 
-    // Packet arrival at BASE under DISABLED mode
-    const packet = createMeshPacket('PKT-103', 'INC-103', 'S1', ['S1', 'BASE'], 10.0)
-    stepMeshPacket(packet, 2.0, 1.0, () => {
+    // Packet transmission across mesh
+    const packet = createMeshPacket('PKT-103', incident.id, 'S1', ['S1', 'S2', 'BASE'], 20.0)
+    let packetDelivered = false
+    let baseToastMessage = null
+
+    stepMeshPacket(packet, 2.0, 1.0)
+    assert.equal(packet.currentNode, 'S2')
+    assert.equal(emailsSent, 0)
+
+    // Packet arrives at BASE
+    stepMeshPacket(packet, 2.0, 1.0, (delPkt) => {
+      packetDelivered = true
+      incident.deliveryStatus = 'DELIVERED'
       if (mode === EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION) {
         mockSendEmail()
+      } else {
+        baseToastMessage = mode === EMAIL_NOTIFICATION_MODES.DISABLED ? 'NOTIFICATIONS DISABLED' : 'PACKET DELIVERY CONFIRMED'
       }
     })
 
-    assert.equal(emailsSent, 0)
+    assert.equal(packetDelivered, true, 'Packet reached BASE normally')
+    assert.equal(packet.status, 'delivered')
+    assert.equal(incident.deliveryStatus, 'DELIVERED')
+    assert.equal(baseToastMessage, 'NOTIFICATIONS DISABLED')
+    assert.equal(emailsSent, 0, 'Zero emails dispatched when DISABLED')
   })
 })
 
