@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Download, AlertTriangle } from 'lucide-react'
 import Sidebar from './components/Sidebar'
+import { useState, useEffect } from 'react'
+import { supabase } from './supabaseClient'
+import Login from './components/Login'
 import TopNav from './components/TopNav'
 import OverviewCards from './components/OverviewCards'
 import ForestMapContainer from './components/forest3d/ForestMapContainer'
@@ -47,6 +50,51 @@ import {
 import './App.css'
 
 export default function App() {
+    const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // 1. Fetch current active session on initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    // 2. Listen to login/logout state transitions dynamically
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // If database is checking the session, show a loading placeholder
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#22c55e', fontFamily: 'sans-serif' }}>
+        Loading EcoSentry Systems...
+      </div>
+    )
+  }
+
+  // If user is not logged in, stop here and force show the Login page
+  if (!session) {
+    return <Login />
+  }
+
+    useEffect(() => {
+    async function testConnection() {
+      const { data, error } = await supabase.from('nodes').select('*');
+      if (error) {
+        console.error('Supabase Connection Error:', error.message);
+      } else {
+        console.log('Successfully connected to Supabase! Nodes:', data);
+      }
+    }
+    testConnection();
+  }, []);
+
   // Centralized Application State
   const [sensors, setSensors] = useState(INITIAL_SENSORS)
 
