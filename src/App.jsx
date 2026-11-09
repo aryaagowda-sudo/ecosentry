@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Download, AlertTriangle } from 'lucide-react'
 import Sidebar from './components/Sidebar'
-import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
-import Login from './components/Login'
+import Login from "./Login"
+
 import TopNav from './components/TopNav'
 import OverviewCards from './components/OverviewCards'
 import ForestMapContainer from './components/forest3d/ForestMapContainer'
@@ -17,6 +17,7 @@ import AnalyticsView from './components/AnalyticsView'
 import SettingsView from './components/SettingsView'
 import MarkerDetailModal from './components/MarkerDetailModal'
 import TacticalRoutingView from './components/tactical/TacticalRoutingView'
+import { recordThreatAlert } from './services/dbService'
 
 import {
   DEFAULT_COMMUNICATION_RANGE,
@@ -68,20 +69,6 @@ export default function App() {
 
     return () => subscription.unsubscribe()
   }, [])
-
-  // If database is checking the session, show a loading placeholder
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#22c55e', fontFamily: 'sans-serif' }}>
-        Loading EcoSentry Systems...
-      </div>
-    )
-  }
-
-  // If user is not logged in, stop here and force show the Login page
-  if (!session) {
-    return <Login />
-  }
 
     useEffect(() => {
     async function testConnection() {
@@ -272,9 +259,17 @@ export default function App() {
   }
 
   // Demonstration trigger: Simulate a new incident on demand
-  const handleSimulateIncident = () => {
+  const handleSimulateIncident = async () => {
     const newInc = generateRandomDemoIncident(sensors)
     setEvents((prev) => [newInc, ...prev])
+
+    // 🚀 3. PERSIST TO SUPABASE DATABASE HERE:
+    await recordThreatAlert({
+      sensorId: newInc.sensorId || 'NODE-01',
+      threatType: newInc.type || 'Chainsaw',
+      confidence: newInc.confidence || 0.95,
+      location: newInc.location || 'Grid Alpha'
+    })
   }
 
   // Marker click from the 3D Forest Map
@@ -402,7 +397,7 @@ export default function App() {
       })
     }
   }, [emailNotificationMode])
-
+  
   // Top-Level Mesh Packet Propagation Loop (Steps packets when not on tactical view)
   const lastPacketTimeRef = useRef(null)
 
@@ -548,6 +543,19 @@ export default function App() {
 
     // 1. Immediately append to state to update UI, map markers, alerts, and trigger localStorage persistence
     setEvents((prev) => [incidentToSave, ...prev])
+    // ==========================================
+    // 🚀 INSERT SUPABASE PERSISTENCE RIGHT HERE:
+    // ==========================================
+    try {
+      await recordThreatAlert({
+        sensorId: incidentToSave.originatingSensorId || incidentToSave.nearestSensorId || 'NODE-01',
+        threatType: incidentToSave.type || 'Poaching / Acoustic Threat',
+        confidence: incidentToSave.confidence || 0.85,
+        location: incidentToSave.location || `Grid X:${incidentToSave.coordinates?.x || 0}, Y:${incidentToSave.coordinates?.y || 0}`
+      })
+    } catch (dbErr) {
+      console.error('Failed to sync threat alert to Supabase:', dbErr)
+    }
 
     // 2. IMMEDIATE MODE: Dispatch email now
     if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
@@ -678,6 +686,19 @@ export default function App() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+    // 👇 PASTE THE SHIELD BLOCKS DIRECTLY HERE (Right above the return statement):
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#22c55e', fontFamily: 'sans-serif' }}>
+        Loading EcoSentry Systems...
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <Login />
   }
 
   return (
