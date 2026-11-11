@@ -8,7 +8,9 @@ import {
   Bell,
   Sparkles,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  User,
+  LogOut
 } from 'lucide-react'
 
 const NAV_BREADCRUMBS = {
@@ -33,7 +35,9 @@ export default function TopNav({
   onSimulateIncident,
   stats,
   onOpenNotifications,
-  onNavigateToOverview
+  onNavigateToOverview,
+  currentRole = 'RANGER',
+  onLogout
 }) {
   const activeThreats = stats?.incidents?.active || 0
   const offlineSensors = stats?.connectivity?.offline || 0
@@ -140,6 +144,56 @@ export default function TopNav({
           <Sparkles size={13} />
           <span>Simulate Event</span>
         </button>
+
+        {/* Active Role Indicator Badge */}
+        <div
+          className={`role-indicator-badge role-${(currentRole || 'RANGER').toLowerCase()}`}
+          title={`Active Session Role: ${currentRole || 'RANGER'}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '4px 9px',
+            borderRadius: '4px',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.6px',
+            textTransform: 'uppercase',
+            fontFamily: 'var(--font-mono, monospace)',
+            backgroundColor: currentRole === 'GUEST' ? 'rgba(245, 158, 11, 0.14)' : 'rgba(16, 185, 129, 0.14)',
+            border: `1px solid ${currentRole === 'GUEST' ? 'rgba(245, 158, 11, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+            color: currentRole === 'GUEST' ? '#f59e0b' : '#10b981'
+          }}
+        >
+          {currentRole === 'GUEST' ? <User size={12} /> : <ShieldCheck size={12} />}
+          <span>{currentRole === 'GUEST' ? 'ROLE: GUEST' : 'ROLE: RANGER'}</span>
+        </div>
+
+        {/* Logout Button */}
+        {onLogout && (
+          <button
+            className="btn-logout-header"
+            onClick={onLogout}
+            title="Sign out of EcoSentry"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              backgroundColor: 'var(--bg-card, #0f172a)',
+              border: '1px solid var(--border-standard, #334155)',
+              color: 'var(--text-secondary, #94a3b8)',
+              fontSize: '11px',
+              fontWeight: 600,
+              padding: '5px 10px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <LogOut size={12} />
+            <span>Logout</span>
+          </button>
+        )}
       </div>
     </header>
   )

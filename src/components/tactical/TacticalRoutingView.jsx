@@ -48,7 +48,9 @@ export default function TacticalRoutingView({
   onAddIncident,
   onPacketDelivered,
   onSwitchToForestMap,
-  onNavigateToOverview
+  onNavigateToOverview,
+  currentRole = 'RANGER',
+  onLogout
 }) {
   // 1. Acoustic Sensors State (Deterministic default: 28 acoustic sensors)
   const [internalSensors, setInternalSensors] = useState(() => {
@@ -544,6 +546,8 @@ export default function TacticalRoutingView({
         }
         onSwitchToForestMap={onSwitchToForestMap}
         onNavigateToOverview={onNavigateToOverview}
+        currentRole={currentRole}
+        onLogout={onLogout}
       />
 
       {/* 2. MAIN WORKSPACE: SIDEBAR, 3D CANVAS & INCIDENT TOOLBOX */}
@@ -559,6 +563,7 @@ export default function TacticalRoutingView({
           selectedNodeId={selectedNodeId}
           activeIncident={activeIncident}
           selectedPath={selectedPath}
+          currentRole={currentRole}
           // Toggles
           showLinks={showLinks}
           setShowLinks={setShowLinks}

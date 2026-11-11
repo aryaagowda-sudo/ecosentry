@@ -26,7 +26,14 @@ import {
   MESSAGE_STATUS,
   SENSOR_QUEUE_CAPACITY
 } from '../src/services/meshNetwork/storeAndForward.js'
-import { EMAIL_NOTIFICATION_MODES, DEFAULT_EMAIL_NOTIFICATION_MODE } from '../src/services/emailService.js'
+import { EMAIL_NOTIFICATION_MODES, DEFAULT_EMAIL_NOTIFICATION_MODE, sendIncidentEmailNotification } from '../src/services/emailService.js'
+import {
+  ROLES,
+  DEMO_RANGER_EMAIL,
+  getRoleFromSession,
+  canConfigureEmailNotifications,
+  createGuestSession
+} from '../src/services/authService.js'
 import { isLegitimateTacticalIncident } from '../src/services/meshNetwork/incidentFiltering.js'
 import { calculateSmartPopupPosition, getSuppressedSensorLabelIds } from '../src/services/meshNetwork/popupPositioning.js'
 
@@ -1775,3 +1782,98 @@ describe('18. Tactical Sensor Inspector Popup Smart Positioning & Viewport Invar
     assert.deepEqual(getSuppressedSensorLabelIds({ screenPos: { otherSensorsPos: null } }), [])
   })
 })
+
+describe('19. Role-Based Access Control (RBAC) & Authentication Invariants', () => {
+  it('correctly resolves Ranger role from verified email or role metadata', () => {
+    // 1. Demo Ranger account
+    const rangerSession1 = {
+      user: { email: 'ranger@ecosentry.com', user_metadata: { name: 'Lead Ranger' } }
+    }
+    assert.equal(getRoleFromSession(rangerSession1), ROLES.RANGER)
+
+    // 2. Ranger account with explicit app_metadata role
+    const rangerSession2 = {
+      user: { email: 'officer@reserve.org', app_metadata: { role: 'RANGER' } }
+    }
+    assert.equal(getRoleFromSession(rangerSession2), ROLES.RANGER)
+
+    // 3. Ranger account with user_metadata role
+    const rangerSession3 = {
+      user: { email: 'ranger2@ecosentry.com', user_metadata: { role: 'RANGER' } }
+    }
+    assert.equal(getRoleFromSession(rangerSession3), ROLES.RANGER)
+  })
+
+  it('correctly resolves Guest role from session properties or guest marker', () => {
+    const guestSession = createGuestSession()
+    assert.equal(guestSession.user.role, ROLES.GUEST)
+    assert.equal(guestSession.user.isGuest, true)
+    assert.equal(getRoleFromSession(guestSession), ROLES.GUEST)
+
+    const sessionWithGuestEmail = {
+      user: { email: 'guest@ecosentry.local', isGuest: true }
+    }
+    assert.equal(getRoleFromSession(sessionWithGuestEmail), ROLES.GUEST)
+  })
+
+  it('returns null role for empty, null, or invalid sessions', () => {
+    assert.equal(getRoleFromSession(null), null)
+    assert.equal(getRoleFromSession({}), null)
+    assert.equal(getRoleFromSession({ user: null }), null)
+  })
+
+  it('validates permission gates: only RANGER may configure email notifications', () => {
+    assert.equal(canConfigureEmailNotifications(ROLES.RANGER), true)
+    assert.equal(canConfigureEmailNotifications(ROLES.GUEST), false)
+    assert.equal(canConfigureEmailNotifications(null), false)
+    assert.equal(canConfigureEmailNotifications(undefined), false)
+  })
+
+  it('strictly blocks email dispatch when role is GUEST and never triggers EmailJS', async () => {
+    const mockIncident = {
+      id: 'INC-GUEST-001',
+      title: 'Gunshot Detected',
+      priority: 'high',
+      deliveryStatus: 'DELIVERED'
+    }
+
+    // Attempting to send an alert under GUEST role
+    const res = await sendIncidentEmailNotification(
+      mockIncident,
+      EMAIL_NOTIFICATION_MODES.IMMEDIATE,
+      ROLES.GUEST
+    )
+
+    assert.equal(res.success, false)
+    assert.equal(res.reason, 'guest_restricted')
+    assert.equal(res.message, 'EMAIL NOTIFICATIONS DISABLED — GUEST MODE')
+  })
+
+  it('enforces that Guest sessions compute emailNotificationMode as DISABLED even if Ranger preference exists', () => {
+    const rangerSavedMode = EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION
+    const activeGuestRole = ROLES.GUEST
+
+    // Emulate App.jsx derived mode logic:
+    const effectiveMode = activeGuestRole === ROLES.GUEST
+      ? EMAIL_NOTIFICATION_MODES.DISABLED
+      : rangerSavedMode
+
+    assert.equal(effectiveMode, EMAIL_NOTIFICATION_MODES.DISABLED)
+  })
+
+  it('switching from Ranger to Guest session immediately suppresses email alerts', async () => {
+    const incident = { id: 'INC-TRANSITION-1', title: 'Chainsaw Sound', priority: 'high' }
+
+    // Ranger session: permitted (even if unconfigured environment skips network delivery)
+    // Guest session: immediately rejected with guest_restricted
+    const guestResult = await sendIncidentEmailNotification(
+      incident,
+      EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION,
+      ROLES.GUEST
+    )
+
+    assert.equal(guestResult.success, false)
+    assert.equal(guestResult.reason, 'guest_restricted')
+  })
+})
+

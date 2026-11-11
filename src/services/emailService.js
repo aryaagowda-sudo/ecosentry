@@ -150,14 +150,25 @@ export const formatIncidentEmailParams = (incident) => {
 
 /**
  * Dispatches an automated incident email notification via EmailJS.
- * Only sends when valid configuration is present and mode is not DISABLED.
+ * Only sends when valid configuration is present, mode is not DISABLED, and role is RANGER.
  * Gracefully handles unconfigured environments and network errors without throwing or blocking UI execution.
  *
  * @param {Object} incident - The created incident report
  * @param {string} [mode] - Optional current notification mode
+ * @param {string} [role] - Optional active user role ('RANGER' | 'GUEST')
  * @returns {Promise<{ success: boolean, status?: number, text?: string, reason?: string, error?: any }>}
  */
-export const sendIncidentEmailNotification = async (incident, mode = null) => {
+export const sendIncidentEmailNotification = async (incident, mode = null, role = null) => {
+  // RBAC Security Gate: Guest sessions are strictly forbidden from transmitting alert emails
+  if (role === 'GUEST') {
+    console.warn('[EcoSentry EmailJS] Email dispatch blocked: Session role is GUEST.')
+    return {
+      success: false,
+      reason: 'guest_restricted',
+      message: 'EMAIL NOTIFICATIONS DISABLED — GUEST MODE'
+    }
+  }
+
   if (mode === EMAIL_NOTIFICATION_MODES.DISABLED) {
     return {
       success: false,

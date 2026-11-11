@@ -23,7 +23,8 @@ import {
 
 export default function SettingsView({
   emailNotificationMode: externalMode,
-  setEmailNotificationMode: externalSetMode
+  setEmailNotificationMode: externalSetMode,
+  currentRole = 'RANGER'
 }) {
   const [internalMode, setInternalMode] = useState(() => {
     try {
@@ -39,7 +40,12 @@ export default function SettingsView({
 
   const emailNotificationMode = externalMode || internalMode
   const handleSelectMode = (mode) => {
+    if (currentRole !== 'RANGER') {
+      console.warn('[EcoSentry RBAC] Guest accounts cannot configure email notification mode.')
+      return
+    }
     try {
+      localStorage.setItem('ecosentry_ranger_email_mode', mode)
       localStorage.setItem('ecosentry_email_notification_mode', mode)
     } catch (e) {
       console.warn('Failed to save email notification mode:', e)
@@ -61,6 +67,13 @@ export default function SettingsView({
   const isConfigured = isEmailConfigured()
 
   const handleTestEmail = async () => {
+    if (currentRole === 'GUEST') {
+      setTestEmailStatus({
+        status: 'error',
+        message: 'EMAIL NOTIFICATIONS DISABLED — GUEST MODE (Guest accounts cannot transmit test alerts).'
+      })
+      return
+    }
     setTestEmailStatus({ status: 'sending', message: 'Sending test alert email...' })
     const testIncident = {
       id: `EVT-TEST-${Date.now().toString().slice(-4)}`,
@@ -277,8 +290,13 @@ export default function SettingsView({
                 type="button"
                 className="btn-action-sm"
                 onClick={handleTestEmail}
-                disabled={testEmailStatus?.status === 'sending'}
-                style={{ gap: '6px' }}
+                disabled={testEmailStatus?.status === 'sending' || currentRole === 'GUEST'}
+                title={currentRole === 'GUEST' ? 'Disabled in Guest mode' : 'Send test alert email via EmailJS'}
+                style={{
+                  gap: '6px',
+                  opacity: currentRole === 'GUEST' ? 0.5 : 1,
+                  cursor: currentRole === 'GUEST' ? 'not-allowed' : 'pointer'
+                }}
               >
                 <Send size={11} />
                 <span>{testEmailStatus?.status === 'sending' ? 'Sending...' : 'Send Test Alert'}</span>
@@ -326,7 +344,7 @@ export default function SettingsView({
                   fontWeight: 700
                 }}
               >
-                CURRENT: {emailNotificationMode}
+                CURRENT: {currentRole === 'GUEST' ? 'DISABLED (GUEST MODE)' : emailNotificationMode}
               </span>
             </div>
 
@@ -334,7 +352,30 @@ export default function SettingsView({
               Configure when automated EmailJS alert emails are transmitted during incident surveillance and mesh routing.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {currentRole === 'GUEST' && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  color: '#d97706',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  marginBottom: '12px'
+                }}
+              >
+                <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>EMAIL NOTIFICATIONS DISABLED — GUEST MODE</strong>. Guest users are not permitted to configure or enable alert notifications. Sign in with a verified Ranger account to configure email dispatch.
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', opacity: currentRole === 'GUEST' ? 0.7 : 1 }}>
               {/* Option 1: Disabled (Default) */}
               <label
                 style={{
@@ -354,6 +395,7 @@ export default function SettingsView({
                   name="emailNotificationModeRadio"
                   value="DISABLED"
                   checked={emailNotificationMode === 'DISABLED'}
+                  disabled={currentRole === 'GUEST'}
                   onChange={() => handleSelectMode('DISABLED')}
                   style={{ marginTop: '3px', accentColor: '#ef4444' }}
                 />
@@ -401,6 +443,7 @@ export default function SettingsView({
                   name="emailNotificationModeRadio"
                   value="AFTER BASE STATION RECEIVES PACKET"
                   checked={emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'}
+                  disabled={currentRole === 'GUEST'}
                   onChange={() => handleSelectMode('AFTER BASE STATION RECEIVES PACKET')}
                   style={{ marginTop: '3px', accentColor: '#06b6d4' }}
                 />
@@ -433,6 +476,7 @@ export default function SettingsView({
                   name="emailNotificationModeRadio"
                   value="IMMEDIATE"
                   checked={emailNotificationMode === 'IMMEDIATE'}
+                  disabled={currentRole === 'GUEST'}
                   onChange={() => handleSelectMode('IMMEDIATE')}
                   style={{ marginTop: '3px', accentColor: '#06b6d4' }}
                 />

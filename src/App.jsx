@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { Download, AlertTriangle } from 'lucide-react'
 import Sidebar from './components/Sidebar'
-import { supabase } from './supabaseClient'
+import { supabase, isSupabaseConfigured } from './supabaseClient'
 import Login from "./Login"
 
 import TopNav from './components/TopNav'
@@ -48,22 +48,50 @@ import {
   DEFAULT_EMAIL_NOTIFICATION_MODE
 } from './services/emailService'
 
+import {
+  ROLES,
+  getRoleFromSession,
+  createGuestSession,
+  canConfigureEmailNotifications
+} from './services/authService'
+
 import './App.css'
 
 export default function App() {
-    const [session, setSession] = useState(null)
+  const [session, setSession] = useState(() => {
+    try {
+      if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+        return createGuestSession()
+      }
+    } catch {}
+    return null
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // 1. Fetch current active session on initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+    supabase.auth.getSession().catch(() => ({ data: { session: null } })).then(({ data: { session: fetchedSession } = {} }) => {
+      try {
+        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+          setSession(createGuestSession())
+          setLoading(false)
+          return
+        }
+      } catch {}
+      if (fetchedSession) {
+        setSession(fetchedSession)
+      }
       setLoading(false)
     })
 
     // 2. Listen to login/logout state transitions dynamically
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      try {
+        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+          return
+        }
+      } catch {}
+      setSession(newSession)
       setLoading(false)
     })
 
@@ -71,8 +99,9 @@ export default function App() {
   }, [])
 
     useEffect(() => {
+    if (!isSupabaseConfigured) return;
     async function testConnection() {
-      const { data, error } = await supabase.from('nodes').select('*');
+      const { data, error } = await supabase.from('nodes').select('*').catch((err) => ({ data: null, error: err }));
       if (error) {
         console.error('Supabase Connection Error:', error.message);
       } else {
@@ -96,18 +125,76 @@ export default function App() {
   // Active Mesh Telemetry Packets
   const [packets, setPackets] = useState([])
 
-  // Persistent Email Notification Mode (Default: 'AFTER BASE STATION RECEIVES PACKET')
-  const [emailNotificationMode, setEmailNotificationMode] = useState(() => {
+  // Derive RBAC role: 'RANGER' | 'GUEST'
+  const currentRole = useMemo(() => getRoleFromSession(session), [session])
+
+  // Persistent Ranger Email Notification Mode (Default: 'DISABLED' per system requirement)
+  const [rangerEmailMode, setRangerEmailMode] = useState(() => {
     try {
-      const saved = localStorage.getItem('ecosentry_email_notification_mode')
+      const saved = localStorage.getItem('ecosentry_ranger_email_mode')
       if (saved && Object.values(EMAIL_NOTIFICATION_MODES).includes(saved)) {
         return saved
+      }
+      const legacySaved = localStorage.getItem('ecosentry_email_notification_mode')
+      if (legacySaved && Object.values(EMAIL_NOTIFICATION_MODES).includes(legacySaved)) {
+        return legacySaved
       }
     } catch (e) {
       console.warn('Failed to parse saved email notification mode:', e)
     }
-    return DEFAULT_EMAIL_NOTIFICATION_MODE
+    return EMAIL_NOTIFICATION_MODES.DISABLED
   })
+
+  // Dynamic Email Notification Mode Enforcing RBAC
+  // Guest sessions MUST ALWAYS be DISABLED. They can never enable or transmit emails.
+  const emailNotificationMode = useMemo(() => {
+    if (currentRole === ROLES.GUEST) {
+      return EMAIL_NOTIFICATION_MODES.DISABLED
+    }
+    return rangerEmailMode
+  }, [currentRole, rangerEmailMode])
+
+  // Secure Setter for Email Notification Mode (RBAC gated to RANGER only)
+  const handleSetEmailNotificationMode = useCallback((newMode) => {
+    if (currentRole !== ROLES.RANGER) {
+      console.warn('[EcoSentry RBAC] Unauthorized attempt to modify email notification mode by role:', currentRole)
+      return
+    }
+    if (!Object.values(EMAIL_NOTIFICATION_MODES).includes(newMode)) return
+    setRangerEmailMode(newMode)
+    try {
+      localStorage.setItem('ecosentry_ranger_email_mode', newMode)
+      localStorage.setItem('ecosentry_email_notification_mode', newMode)
+    } catch (e) {
+      console.warn('Failed to persist email notification mode:', e)
+    }
+  }, [currentRole])
+
+  // Authentication & Session State Handlers
+  const handleRangerSuccess = useCallback((newSession) => {
+    try {
+      localStorage.removeItem('ecosentry_guest_session')
+    } catch {}
+    setSession(newSession)
+  }, [])
+
+  const handleGuestLogin = useCallback(() => {
+    try {
+      localStorage.setItem('ecosentry_guest_session', 'true')
+    } catch {}
+    const guestSession = createGuestSession()
+    setSession(guestSession)
+  }, [])
+
+  const handleLogout = useCallback(async () => {
+    try {
+      localStorage.removeItem('ecosentry_guest_session')
+      await supabase.auth.signOut().catch(() => {})
+    } catch (err) {
+      console.warn('Error during logout:', err)
+    }
+    setSession(null)
+  }, [])
 
   // Base Station Packet Arrival Toast Notification
   const [baseDeliveryToast, setBaseDeliveryToast] = useState(null)
@@ -350,12 +437,15 @@ export default function App() {
     })
 
     // 4. Email Notification Workflow based on selected mode
-    if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION) {
+    if (currentRole === ROLES.GUEST) {
+      setBaseDeliveryToast({
+        incidentId: deliveredPkt.incidentId,
+        title: `BASE STATION RECEIVED PACKET ${deliveredPkt.id}`,
+        message: 'EMAIL NOTIFICATIONS DISABLED — GUEST MODE'
+      })
+    } else if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.AFTER_BASE_STATION) {
       const incId = deliveredPkt.incidentId || 'INCIDENT'
 
-      // Display required confirmation:
-      // BASE STATION RECEIVED INCIDENT INC-XXXX
-      // EMAIL NOTIFICATION SENT
       setBaseDeliveryToast({
         incidentId: incId,
         title: `BASE STATION RECEIVED INCIDENT ${incId}`,
@@ -371,7 +461,7 @@ export default function App() {
       }
 
       try {
-        const emailRes = await sendIncidentEmailNotification(incToSend, emailNotificationMode)
+        const emailRes = await sendIncidentEmailNotification(incToSend, emailNotificationMode, currentRole)
         setEvents((prev) =>
           prev.map((e) =>
             e.id === incToSend.id
@@ -386,7 +476,6 @@ export default function App() {
         console.error('[EcoSentry] Base-station-confirmed email dispatch error:', err)
       }
     } else {
-      // Immediate mode (already dispatched at creation) or Disabled
       setBaseDeliveryToast({
         incidentId: deliveredPkt.incidentId,
         title: `BASE STATION RECEIVED PACKET ${deliveredPkt.id}`,
@@ -396,7 +485,7 @@ export default function App() {
             : 'PACKET DELIVERY CONFIRMED'
       })
     }
-  }, [emailNotificationMode])
+  }, [emailNotificationMode, currentRole])
   
   // Top-Level Mesh Packet Propagation Loop (Steps packets when not on tactical view)
   const lastPacketTimeRef = useRef(null)
@@ -480,7 +569,9 @@ export default function App() {
           transmissionStatus: bestRoute.reachable ? 'in_transit' : 'queued',
           deliveryStatus: bestRoute.reachable ? 'in_transit' : 'queued',
           emailNotificationStatus:
-            emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
+            currentRole === ROLES.GUEST
+              ? 'DISABLED (GUEST)'
+              : emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
               ? 'SENDING'
               : emailNotificationMode === EMAIL_NOTIFICATION_MODES.DISABLED
               ? 'DISABLED'
@@ -522,7 +613,9 @@ export default function App() {
           deliveryStatus: 'unrouted',
           disclaimer: 'Manual incident placement. Coordinates were outside the acoustic hearing range of all operational sensors.',
           emailNotificationStatus:
-            emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
+            currentRole === ROLES.GUEST
+              ? 'DISABLED (GUEST)'
+              : emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE
               ? 'SENDING'
               : emailNotificationMode === EMAIL_NOTIFICATION_MODES.DISABLED
               ? 'DISABLED'
@@ -558,9 +651,9 @@ export default function App() {
     }
 
     // 2. IMMEDIATE MODE: Dispatch email now
-    if (emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
+    if (currentRole === ROLES.RANGER && emailNotificationMode === EMAIL_NOTIFICATION_MODES.IMMEDIATE) {
       try {
-        const emailResult = await sendIncidentEmailNotification(incidentToSave, emailNotificationMode)
+        const emailResult = await sendIncidentEmailNotification(incidentToSave, emailNotificationMode, currentRole)
         setEvents((prev) =>
           prev.map((e) =>
             e.id === incidentToSave.id
@@ -698,7 +791,12 @@ export default function App() {
   }
 
   if (!session) {
-    return <Login />
+    return (
+      <Login
+        onRangerSuccess={handleRangerSuccess}
+        onGuestLogin={handleGuestLogin}
+      />
+    )
   }
 
   return (
@@ -725,6 +823,8 @@ export default function App() {
           stats={stats}
           onOpenNotifications={() => setActiveNav('threats')}
           onNavigateToOverview={() => setActiveNav('overview')}
+          currentRole={currentRole}
+          onLogout={handleLogout}
         />
 
         {/* 3. MAIN DASHBOARD CONTENT */}
@@ -863,7 +963,7 @@ export default function App() {
                 packets={packets}
                 setPackets={setPackets}
                 emailNotificationMode={emailNotificationMode}
-                onChangeEmailMode={setEmailNotificationMode}
+                onChangeEmailMode={handleSetEmailNotificationMode}
                 events={events}
                 customToolboxItems={customToolboxItems}
                 onAddCustomToolboxItem={handleAddCustomToolboxItem}
@@ -872,6 +972,8 @@ export default function App() {
                 onPacketDelivered={handlePacketDeliveredAtBase}
                 onSwitchToForestMap={() => setActiveNav('map')}
                 onNavigateToOverview={() => setActiveNav('overview')}
+                currentRole={currentRole}
+                onLogout={handleLogout}
               />
             </div>
           )}
@@ -947,7 +1049,8 @@ export default function App() {
           {activeNav === 'settings' && (
             <SettingsView
               emailNotificationMode={emailNotificationMode}
-              setEmailNotificationMode={setEmailNotificationMode}
+              setEmailNotificationMode={handleSetEmailNotificationMode}
+              currentRole={currentRole}
             />
           )}
         </main>

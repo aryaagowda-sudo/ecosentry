@@ -12,7 +12,9 @@ import {
   Compass,
   LayoutDashboard,
   Maximize2,
-  Minimize2
+  Minimize2,
+  User,
+  LogOut
 } from 'lucide-react'
 
 /**
@@ -25,7 +27,9 @@ export default function TacticalTopOverlay({
   onShowIncidentOverlay,
   packetsInTransitCount = 0,
   onSwitchToForestMap,
-  onNavigateToOverview
+  onNavigateToOverview,
+  currentRole = 'RANGER',
+  onLogout
 }) {
   const networkStatus = stats?.networkStatus || (stats?.failedSensors > 0 ? 'DEGRADED' : 'OPTIMAL')
   const statusColor =
@@ -188,6 +192,45 @@ export default function TacticalTopOverlay({
           {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           <span>{isFullscreen ? 'Windowed' : 'Fullscreen'}</span>
         </button>
+
+        {/* Role Indicator Badge */}
+        <div
+          className={`tactical-role-indicator ${currentRole === 'GUEST' ? 'guest' : 'ranger'}`}
+          title={`Active Session Role: ${currentRole || 'RANGER'}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '10.5px',
+            fontWeight: 700,
+            letterSpacing: '0.6px',
+            fontFamily: 'monospace',
+            backgroundColor: currentRole === 'GUEST' ? 'rgba(245, 158, 11, 0.14)' : 'rgba(16, 185, 129, 0.14)',
+            border: `1px solid ${currentRole === 'GUEST' ? 'rgba(245, 158, 11, 0.45)' : 'rgba(16, 185, 129, 0.45)'}`,
+            color: currentRole === 'GUEST' ? '#f59e0b' : '#10b981'
+          }}
+        >
+          {currentRole === 'GUEST' ? <User size={12} /> : <ShieldCheck size={12} />}
+          <span>{currentRole === 'GUEST' ? 'GUEST' : 'RANGER'}</span>
+        </div>
+
+        {/* Tactical Mode Logout Button */}
+        {onLogout && (
+          <button
+            className="btn-switch-map btn-tactical-logout"
+            onClick={onLogout}
+            title="Sign out of EcoSentry"
+            style={{
+              borderColor: 'rgba(239, 68, 68, 0.35)',
+              color: '#f87171'
+            }}
+          >
+            <LogOut size={13} />
+            <span>Logout</span>
+          </button>
+        )}
       </div>
     </div>
   )

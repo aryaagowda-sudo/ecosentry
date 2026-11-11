@@ -31,6 +31,7 @@ export default function TacticalSidebar({
   selectedNodeId = null,
   activeIncident = null,
   selectedPath = [],
+  currentRole = 'RANGER',
   // Toggles
   showLinks = true,
   setShowLinks,
@@ -546,11 +547,11 @@ export default function TacticalSidebar({
                   padding: '7px 10px',
                   borderRadius: '4px',
                   border:
-                    emailNotificationMode === 'DISABLED'
+                    currentRole === 'GUEST' || emailNotificationMode === 'DISABLED'
                       ? '1px solid rgba(239, 68, 68, 0.35)'
                       : '1px solid rgba(6, 182, 212, 0.35)',
                   backgroundColor:
-                    emailNotificationMode === 'DISABLED'
+                    currentRole === 'GUEST' || emailNotificationMode === 'DISABLED'
                       ? 'rgba(239, 68, 68, 0.08)'
                       : 'rgba(6, 182, 212, 0.08)',
                   display: 'flex',
@@ -565,10 +566,12 @@ export default function TacticalSidebar({
                 <span
                   style={{
                     fontWeight: 700,
-                    color: emailNotificationMode === 'DISABLED' ? '#ef4444' : '#00f0ff'
+                    color: currentRole === 'GUEST' ? '#f59e0b' : emailNotificationMode === 'DISABLED' ? '#ef4444' : '#00f0ff'
                   }}
                 >
-                  {emailNotificationMode === 'DISABLED'
+                  {currentRole === 'GUEST'
+                    ? 'DISABLED — GUEST MODE'
+                    : emailNotificationMode === 'DISABLED'
                     ? 'DISABLED'
                     : emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'
                     ? 'ENABLED (BASE CONFIRMED)'
@@ -720,42 +723,64 @@ export default function TacticalSidebar({
                 <div className="slider-label-row">
                   <span>EMAIL NOTIFICATIONS:</span>
                   <span
-                    className={`slider-val ${emailNotificationMode === 'DISABLED' ? 'red' : 'cyan'}`}
+                    className={`slider-val ${currentRole === 'GUEST' ? 'amber' : emailNotificationMode === 'DISABLED' ? 'red' : 'cyan'}`}
                     style={{ fontSize: '10px', fontWeight: 700 }}
                   >
-                    {emailNotificationMode === 'DISABLED'
+                    {currentRole === 'GUEST'
+                      ? 'DISABLED (GUEST)'
+                      : emailNotificationMode === 'DISABLED'
                       ? 'DISABLED'
                       : emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET'
                       ? 'BASE CONFIRMED'
                       : 'IMMEDIATE'}
                   </span>
                 </div>
-                <div className="btn-toggle-cluster" style={{ width: '100%' }}>
-                  <button
-                    className={`btn-toggle-option ${emailNotificationMode === 'DISABLED' ? 'active' : ''}`}
-                    onClick={() => onChangeEmailMode?.('DISABLED')}
-                    style={{ flex: 1, textAlign: 'center' }}
-                    title="Disable email notifications (Default)"
+                {currentRole === 'GUEST' ? (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                      color: '#f59e0b',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      letterSpacing: '0.04em',
+                      marginTop: '4px'
+                    }}
                   >
-                    DISABLED
-                  </button>
-                  <button
-                    className={`btn-toggle-option ${emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET' ? 'active' : ''}`}
-                    onClick={() => onChangeEmailMode?.('AFTER BASE STATION RECEIVES PACKET')}
-                    style={{ flex: 1, textAlign: 'center' }}
-                    title="Send email only after packet reaches Base Station"
-                  >
-                    BASE CONFIRMED
-                  </button>
-                  <button
-                    className={`btn-toggle-option ${emailNotificationMode === 'IMMEDIATE' ? 'active' : ''}`}
-                    onClick={() => onChangeEmailMode?.('IMMEDIATE')}
-                    style={{ flex: 1, textAlign: 'center' }}
-                    title="Send email immediately upon incident creation"
-                  >
-                    IMMEDIATE
-                  </button>
-                </div>
+                    🔒 EMAIL NOTIFICATIONS DISABLED — GUEST MODE
+                  </div>
+                ) : (
+                  <div className="btn-toggle-cluster" style={{ width: '100%' }}>
+                    <button
+                      className={`btn-toggle-option ${emailNotificationMode === 'DISABLED' ? 'active' : ''}`}
+                      onClick={() => onChangeEmailMode?.('DISABLED')}
+                      style={{ flex: 1, textAlign: 'center' }}
+                      title="Disable email notifications (Default)"
+                    >
+                      DISABLED
+                    </button>
+                    <button
+                      className={`btn-toggle-option ${emailNotificationMode === 'AFTER BASE STATION RECEIVES PACKET' ? 'active' : ''}`}
+                      onClick={() => onChangeEmailMode?.('AFTER BASE STATION RECEIVES PACKET')}
+                      style={{ flex: 1, textAlign: 'center' }}
+                      title="Send email only after packet reaches Base Station"
+                    >
+                      BASE CONFIRMED
+                    </button>
+                    <button
+                      className={`btn-toggle-option ${emailNotificationMode === 'IMMEDIATE' ? 'active' : ''}`}
+                      onClick={() => onChangeEmailMode?.('IMMEDIATE')}
+                      style={{ flex: 1, textAlign: 'center' }}
+                      title="Send email immediately upon incident creation"
+                    >
+                      IMMEDIATE
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Checkbox Toggles */}
