@@ -12,6 +12,109 @@
   overflow: hidden;
 }
 
+/* Dashboard Entrance Transition from Login */
+@keyframes dashboardFadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.dashboard-container.dashboard-entrance-animate {
+  animation: dashboardFadeSlideIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* System Initialization Loading Screen */
+.ecosentry-init-loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #02060b;
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+}
+
+.init-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: rgba(4, 13, 24, 0.9);
+  padding: 2.2rem 2.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.15);
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+}
+
+.init-shield-glow {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  animation: initPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes initPulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.8; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+.init-loading-title {
+  color: #00f0ff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.init-loading-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+.init-loading-bar-fill {
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+  border-radius: 999px;
+  animation: initScan 1.4s infinite ease-in-out;
+}
+
+@keyframes initScan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.init-loading-subtitle {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-family: 'Inter', sans-serif;
+}
+
 /* ==========================================================================
    1. ENTERPRISE SIDEBAR
    ========================================================================== */

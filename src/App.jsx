@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
-import { Download, AlertTriangle } from 'lucide-react'
+import { Download, AlertTriangle, Shield } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import Login from "./Login"
@@ -58,41 +58,26 @@ import {
 import './App.css'
 
 export default function App() {
-  const [session, setSession] = useState(() => {
-    try {
-      if (localStorage.getItem('ecosentry_guest_session') === 'true') {
-        return createGuestSession()
-      }
-    } catch {}
-    return null
-  })
-  const [loading, setLoading] = useState(true)
+  // Pure unauthenticated initial state - never automatically authenticate on application load
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [isEnteringDashboard, setIsEnteringDashboard] = useState(false)
 
   useEffect(() => {
-    // 1. Fetch current active session on initial load
-    supabase.auth.getSession().catch(() => ({ data: { session: null } })).then(({ data: { session: fetchedSession } = {} }) => {
-      try {
-        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
-          setSession(createGuestSession())
-          setLoading(false)
-          return
-        }
-      } catch {}
-      if (fetchedSession) {
-        setSession(fetchedSession)
-      }
-      setLoading(false)
-    })
+    // Security Requirement: Do not automatically authenticate the Ranger when the application loads.
+    // Require the user/admin to manually enter their credentials.
+    try {
+      localStorage.removeItem('ecosentry_guest_session')
+    } catch {}
+    supabase.auth.signOut().catch(() => {})
+    setSession(null)
+    setLoading(false)
 
-    // 2. Listen to login/logout state transitions dynamically
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      try {
-        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
-          return
-        }
-      } catch {}
-      setSession(newSession)
-      setLoading(false)
+    // Listen to auth state changes (e.g. sign out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === 'SIGNED_OUT' || !newSession) {
+        setSession(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -181,7 +166,10 @@ export default function App() {
   const handleGuestLogin = useCallback(() => {
     try {
       localStorage.setItem('ecosentry_guest_session', 'true')
+      localStorage.removeItem('ecosentry_ranger_email_mode')
+      localStorage.removeItem('ecosentry_email_notification_mode')
     } catch {}
+    setRangerEmailMode(EMAIL_NOTIFICATION_MODES.DISABLED)
     const guestSession = createGuestSession()
     setSession(guestSession)
   }, [])
@@ -189,11 +177,14 @@ export default function App() {
   const handleLogout = useCallback(async () => {
     try {
       localStorage.removeItem('ecosentry_guest_session')
+      localStorage.removeItem('ecosentry_ranger_email_mode')
+      localStorage.removeItem('ecosentry_email_notification_mode')
       await supabase.auth.signOut().catch(() => {})
     } catch (err) {
       console.warn('Error during logout:', err)
     }
     setSession(null)
+    setRangerEmailMode(EMAIL_NOTIFICATION_MODES.DISABLED)
   }, [])
 
   // Base Station Packet Arrival Toast Notification
@@ -784,8 +775,17 @@ export default function App() {
     // 👇 PASTE THE SHIELD BLOCKS DIRECTLY HERE (Right above the return statement):
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0f172a', color: '#22c55e', fontFamily: 'sans-serif' }}>
-        Loading EcoSentry Systems...
+      <div className="ecosentry-init-loading-screen" role="status" aria-live="polite">
+        <div className="init-loading-card">
+          <div className="init-shield-glow">
+            <Shield size={28} style={{ color: '#00f0ff' }} />
+          </div>
+          <span className="init-loading-title">ECOSENTRY // GRID INITIALIZATION</span>
+          <div className="init-loading-bar-track">
+            <div className="init-loading-bar-fill" />
+          </div>
+          <span className="init-loading-subtitle">Synchronizing mesh nodes &amp; telemetry beacons...</span>
+        </div>
       </div>
     )
   }
@@ -800,7 +800,7 @@ export default function App() {
   }
 
   return (
-    <div className={`dashboard-container ${activeNav === 'tactical' ? 'tactical-mode-active' : ''}`}>
+    <div className={`dashboard-container ${activeNav === 'tactical' ? 'tactical-mode-active' : ''} ${isEnteringDashboard ? 'dashboard-entrance-animate' : ''}`}>
       {/* 1. ENTERPRISE SIDEBAR NAVIGATION (Hidden in Tactical Mode for full-screen immersion) */}
       {activeNav !== 'tactical' && (
         <Sidebar
