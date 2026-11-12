@@ -5,11 +5,11 @@ import {
   Lock,
   Eye,
   EyeOff,
-  User,
-  Key,
+  ArrowRight,
   AlertCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { verifyRoleWithBackend } from './services/authService'
@@ -20,8 +20,10 @@ export default function Login({ onRangerSuccess, onGuestLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [infoNotice, setInfoNotice] = useState('')
 
   // Transition state: 'idle' | 'success' | 'exiting'
   const [transitionState, setTransitionState] = useState('idle')
@@ -45,12 +47,13 @@ export default function Login({ onRangerSuccess, onGuestLogin }) {
     const enteredPassword = password
 
     if (!sanitizedEmail || !enteredPassword) {
-      setErrorMsg('Please enter both your authorized email and security key.')
+      setErrorMsg('Please enter both your authorized email and password.')
       return
     }
 
     setLoading(true)
     setErrorMsg('')
+    setInfoNotice('')
 
     try {
       // 1. Authenticate with Supabase Auth (TLS encrypted)
@@ -75,7 +78,7 @@ export default function Login({ onRangerSuccess, onGuestLogin }) {
       }
 
       // 2. Secure Backend Database Authorization Check:
-      // Verify RANGER role directly in PostgreSQL using database RPC get_current_user_role
+      // Verify RANGER role using multi-tier database authorization
       const { isRanger } = await verifyRoleWithBackend()
 
       if (!isRanger) {
@@ -123,6 +126,7 @@ export default function Login({ onRangerSuccess, onGuestLogin }) {
     setEmail('')
     setPassword('')
     setErrorMsg('')
+    setInfoNotice('')
 
     setSuccessPayload({
       role: 'GUEST',
@@ -145,193 +149,268 @@ export default function Login({ onRangerSuccess, onGuestLogin }) {
     timeoutRef.current.push(t1, t2)
   }
 
+  const handleForgotPassword = (e) => {
+    e.preventDefault()
+    setInfoNotice('For security, ranger credentials must be reset via your reserve operations lead.')
+  }
+
   return (
-    <div className="ecosentry-login-viewport" role="region" aria-label="EcoSentry Access Portal">
-      {/* Background Ambience & Cyber Grid */}
-      <div className="login-backdrop-grid" aria-hidden="true" />
-      <div className="login-backdrop-glow" aria-hidden="true" />
-      <div className="login-backdrop-trees" aria-hidden="true" />
+    <div className={`ecosentry-split-auth ${transitionState === 'exiting' ? 'auth-exit-transition' : ''}`}>
+      {/* =========================================================================
+          LEFT PANEL: Misty Rainforest Branding (55% desktop width)
+          ========================================================================= */}
+      <section className="auth-forest-panel" aria-label="EcoSentry Forest Network">
+        <div 
+          className="auth-forest-bg" 
+          style={{ backgroundImage: `url('/assets/forest-login-bg.jpg')` }}
+          aria-hidden="true" 
+        />
+        <div className="auth-forest-overlay" aria-hidden="true" />
 
-      {/* Decorative Subtle Corner HUD markings */}
-      <div className="login-hud-corner hud-corner-top-left" aria-hidden="true">
-        <span className="hud-corner-dot" />
-        <span>ECOSENTRY // GRID AUTH</span>
-      </div>
-      <div className="login-hud-corner hud-corner-top-right" aria-hidden="true">
-        <span>SECURITY PROTOCOL: AES-256</span>
-      </div>
-      <div className="login-hud-corner hud-corner-bottom-left" aria-hidden="true">
-        <span>RESERVE SECTOR: 12.450°N, 76.240°E</span>
-      </div>
-      <div className="login-hud-corner hud-corner-bottom-right" aria-hidden="true">
-        <span className="hud-corner-dot-green" />
-        <span>NETWORK: 28 NODES ACTIVE</span>
-      </div>
+        <div className="auth-forest-inner">
+          {/* Top Branding Lockup & Live Status Badge */}
+          <div className="auth-forest-topbar">
+            <div className="auth-brand-lockup">
+              <div className="auth-brand-icon-box">
+                <Shield size={24} className="auth-brand-shield" />
+              </div>
+              <div className="auth-brand-headings">
+                <span className="auth-brand-title">EcoSentry</span>
+                <span className="auth-brand-sub">WILDLIFE INTELLIGENCE</span>
+              </div>
+            </div>
 
-      {/* Portal Container */}
-      <div className={`ecosentry-login-card ${transitionState === 'exiting' ? 'card-exit-transition' : ''}`}>
-        {/* Subtle Cyber Corner Brackets */}
-        <div className="card-corner card-corner-tl" aria-hidden="true" />
-        <div className="card-corner card-corner-tr" aria-hidden="true" />
-        <div className="card-corner card-corner-bl" aria-hidden="true" />
-        <div className="card-corner card-corner-br" aria-hidden="true" />
-
-        {/* Portal Header */}
-        <div className="login-brand-header">
-          <div className="login-shield-badge">
-            <Shield size={26} style={{ color: '#00f0ff' }} />
+            <div className="auth-live-badge" title="Real-time acoustic sensor telemetry active">
+              <span className="auth-live-pulse-dot" />
+              <span>LIVE FOREST NETWORK</span>
+            </div>
           </div>
-          <span className="login-portal-eyebrow">Biosphere Defense Network</span>
-          <h1 className="login-portal-title">ECOSENTRY PORTAL</h1>
-          <p className="login-portal-subtitle">
-            Autonomous Biosphere Surveillance &amp; Acoustic Mesh Grid
-          </p>
+
+          {/* Centerpiece Mission Statement */}
+          <div className="auth-forest-hero">
+            <h1 className="auth-forest-headline">
+              Protecting Wildlife Through Intelligent Surveillance
+            </h1>
+            <p className="auth-forest-narrative">
+              One connected view of field sensors, ranger teams, and critical habitats—built for faster, safer decisions.
+            </p>
+          </div>
+
+          {/* Bottom Live Metrics */}
+          <div className="auth-forest-stats">
+            <div className="auth-stat-item">
+              <div className="auth-stat-num">248</div>
+              <div className="auth-stat-caption">Sensors Deployed</div>
+            </div>
+
+            <div className="auth-stat-divider" aria-hidden="true" />
+
+            <div className="auth-stat-item">
+              <div className="auth-stat-num">18</div>
+              <div className="auth-stat-caption">Ranger Teams</div>
+            </div>
+
+            <div className="auth-stat-divider" aria-hidden="true" />
+
+            <div className="auth-stat-item">
+              <div className="auth-stat-num">99.8%</div>
+              <div className="auth-stat-caption">Network Reliability</div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* VIEW 1: Success Verification Animation */}
-        {transitionState !== 'idle' && successPayload ? (
-          <div className="login-success-container" role="status" aria-live="polite">
-            <div className="login-success-radar">
-              <div className={`login-success-ring ${successPayload.role.toLowerCase()}`} />
-              <div className={`login-success-icon-core ${successPayload.role.toLowerCase()}`}>
-                <CheckCircle2 size={28} />
+      {/* =========================================================================
+          RIGHT PANEL: Clean Enterprise Login Form (45% desktop width)
+          ========================================================================= */}
+      <section className="auth-form-panel" aria-label="Operations Authentication">
+        <div className="auth-form-scroll-body">
+          <div className="auth-form-card">
+            {/* Mobile Branding (appears when forest panel is hidden on mobile) */}
+            <div className="auth-mobile-header" aria-hidden="true">
+              <div className="auth-mobile-icon-box">
+                <Shield size={22} className="auth-brand-shield" />
+              </div>
+              <div className="auth-brand-headings dark">
+                <span className="auth-brand-title dark">EcoSentry</span>
+                <span className="auth-brand-sub dark">WILDLIFE INTELLIGENCE</span>
               </div>
             </div>
 
-            <h2 className="login-success-title">{successPayload.title}</h2>
-            <span className={`login-success-badge ${successPayload.role.toLowerCase()}`}>
-              {successPayload.badge}
-            </span>
-            <p className="login-success-status-msg">{successPayload.message}</p>
-
-            <div className="login-progress-track">
-              <div className={`login-progress-fill ${successPayload.role.toLowerCase()}`} />
-            </div>
-          </div>
-        ) : (
-          /* VIEW 2: Interactive Access Form */
-          <>
-            {/* Inline Error Box */}
-            {errorMsg && (
-              <div className="login-error-alert" role="alert">
-                <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            {/* Ranger Login Form */}
-            <form onSubmit={handleRangerLogin} className="login-form-main" autoComplete="off" noValidate>
-              <div className="login-section-header">
-                <span className="login-section-label">Ranger Authentication</span>
-                <span className="login-clearance-badge">ADMIN</span>
-              </div>
-
-              {/* Email Input */}
-              <div className="login-input-group">
-                <label htmlFor="ranger-email-input" className="login-input-label">
-                  <span>Ranger Email</span>
-                </label>
-                <div className="login-input-wrapper">
-                  <Mail size={14} className="login-input-icon" />
-                  <input
-                    id="ranger-email-input"
-                    name="ranger_auth_email"
-                    type="email"
-                    required
-                    disabled={loading}
-                    placeholder="Enter authorized email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="login-text-input"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    spellCheck={false}
-                  />
+            {/* VIEW 1: Verification Animation Overlay */}
+            {transitionState !== 'idle' && successPayload ? (
+              <div className="auth-success-card" role="status" aria-live="polite">
+                <div className={`auth-success-radar-icon ${successPayload.role.toLowerCase()}`}>
+                  <CheckCircle2 size={36} />
+                </div>
+                <h2 className="auth-success-title">{successPayload.title}</h2>
+                <span className={`auth-success-clearance ${successPayload.role.toLowerCase()}`}>
+                  {successPayload.badge}
+                </span>
+                <p className="auth-success-msg">{successPayload.message}</p>
+                <div className="auth-success-progress-track">
+                  <div className={`auth-success-progress-bar ${successPayload.role.toLowerCase()}`} />
                 </div>
               </div>
+            ) : (
+              /* VIEW 2: Interactive Access Form */
+              <>
+                {/* Form Heading Section */}
+                <div className="auth-form-intro">
+                  <div className="auth-ops-badge">
+                    <Lock size={12} className="auth-ops-lock" />
+                    <span>SECURE OPERATIONS ACCESS</span>
+                  </div>
+                  <h2 className="auth-heading-main">Welcome Back, Ranger</h2>
+                  <p className="auth-sub-instructions">
+                    Sign in to access the EcoSentry forest intelligence network.
+                  </p>
+                </div>
 
-              {/* Password Input */}
-              <div className="login-input-group">
-                <label htmlFor="ranger-password-input" className="login-input-label">
-                  <span>Security Key / Password</span>
-                </label>
-                <div className="login-input-wrapper">
-                  <Lock size={14} className="login-input-icon" />
-                  <input
-                    id="ranger-password-input"
-                    name="ranger_auth_key"
-                    type={showPassword ? 'text' : 'password'}
-                    required
+                {/* Error Banner */}
+                {errorMsg && (
+                  <div className="auth-alert-box error" role="alert">
+                    <AlertCircle size={16} className="auth-alert-icon error" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {/* Info Notice (e.g. Forgot Password) */}
+                {infoNotice && (
+                  <div className="auth-alert-box info" role="status">
+                    <Info size={16} className="auth-alert-icon info" />
+                    <span>{infoNotice}</span>
+                  </div>
+                )}
+
+                {/* Main Ranger Login Form */}
+                <form onSubmit={handleRangerLogin} className="auth-inputs-form" autoComplete="off" noValidate>
+                  {/* Ranger Email Field */}
+                  <div className="auth-input-group">
+                    <label htmlFor="ranger-email-field" className="auth-input-label">
+                      Ranger Email
+                    </label>
+                    <div className="auth-input-field-wrap">
+                      <Mail size={16} className="auth-field-lead-icon" />
+                      <input
+                        id="ranger-email-field"
+                        name="ranger_auth_email"
+                        type="email"
+                        required
+                        disabled={loading}
+                        placeholder="name@ecosentry.org"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="auth-text-field"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-form-type="other"
+                        spellCheck={false}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field with Forgot Link */}
+                  <div className="auth-input-group">
+                    <div className="auth-label-flex">
+                      <label htmlFor="ranger-password-field" className="auth-input-label">
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        className="auth-forgot-password-link"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="auth-input-field-wrap">
+                      <Lock size={16} className="auth-field-lead-icon" />
+                      <input
+                        id="ranger-password-field"
+                        name="ranger_auth_key"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        disabled={loading}
+                        placeholder="Enter your secure password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="auth-text-field"
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-form-type="other"
+                        spellCheck={false}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="auth-toggle-visibility-btn"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Remember Me Checkbox */}
+                  <div className="auth-remember-row">
+                    <label className="auth-checkbox-container">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="auth-native-checkbox"
+                      />
+                      <span className="auth-checkbox-text">Remember me on this device</span>
+                    </label>
+                  </div>
+
+                  {/* Submit CTA: Sign In as Ranger */}
+                  <button
+                    type="submit"
                     disabled={loading}
-                    placeholder="Enter security key"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="login-text-input"
-                    autoComplete="new-password"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    spellCheck={false}
-                  />
+                    className="auth-btn-ranger-submit"
+                    aria-busy={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="auth-spin-icon" />
+                        <span>Verifying Credentials...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Sign In as Ranger</span>
+                        <ArrowRight size={17} className="auth-arrow-icon" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div className="auth-horizontal-divider">
+                  <span className="auth-divider-line" />
+                  <span className="auth-divider-text">OR</span>
+                  <span className="auth-divider-line" />
+                </div>
+
+                {/* Guest Login Option */}
+                <div className="auth-guest-option-block">
                   <button
                     type="button"
-                    className="login-password-toggle-btn"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    title={showPassword ? 'Hide security key' : 'Show security key'}
-                    aria-label={showPassword ? 'Hide security key' : 'Show security key'}
-                    tabIndex={0}
+                    onClick={handleGuestAccess}
+                    disabled={loading}
+                    className="auth-btn-guest-outline"
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    <span className="auth-guest-main-title">Guest Login</span>
+                    <span className="auth-guest-sub-badge">Restricted Access</span>
                   </button>
                 </div>
-              </div>
-
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="login-btn-primary"
-                aria-busy={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="login-spin" />
-                    <span>Authenticating Credentials...</span>
-                  </>
-                ) : (
-                  <>
-                    <Key size={15} />
-                    <span>Sign In as Ranger</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Tactical Divider */}
-            <div className="login-divider">
-              <div className="login-divider-line" />
-              <span className="login-divider-text">OR EXPLORE GRID</span>
-              <div className="login-divider-line" />
-            </div>
-
-            {/* Guest Login Option */}
-            <div className="login-guest-section">
-              <button
-                type="button"
-                onClick={handleGuestAccess}
-                disabled={loading}
-                className="login-btn-guest"
-              >
-                <User size={14} />
-                <span>Guest Login (Restricted Access)</span>
-              </button>
-              <p className="login-guest-caption">
-                🔒 Observer Access • View 3D forest map, sensor telemetry &amp; routing simulations. Email alerts permanently disabled.
-              </p>
-            </div>
-          </>
-        )}
-      </div>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
