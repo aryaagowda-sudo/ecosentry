@@ -39,7 +39,7 @@ export function getRoleFromSession(session) {
     if (r === ROLES.GUEST) return ROLES.GUEST
   }
 
-  // 3. Explicit user_metadata role
+  // 3. Explicit user_metadata role (verified from Supabase Auth)
   if (user.user_metadata?.role) {
     const r = String(user.user_metadata.role).toUpperCase().trim()
     if (r === ROLES.RANGER) return ROLES.RANGER
@@ -52,24 +52,64 @@ export function getRoleFromSession(session) {
 
 /**
  * Secure Backend Authorization:
- * Calls PostgreSQL RPC `get_current_user_role` to verify Ranger authorization in the database.
- * Evaluates `auth.uid()` securely inside Postgres with SECURITY DEFINER.
+ * Verifies Ranger authorization directly against the Supabase backend.
+ * Checks in order of priority:
+ * 1. Supabase Auth real-time verified user token (supabase.auth.getUser())
+ * 2. Database RPC get_current_user_role (SECURITY DEFINER in Postgres)
+ * 3. Database public.profiles table (checking role for auth.uid())
+ * 4. Server-verified app_metadata.role and user_metadata.role
+ * 
+ * Fails closed: Returns { role: ROLES.GUEST, isRanger: false } if unverified.
  * 
  * @returns {Promise<{ role: 'RANGER' | 'GUEST', isRanger: boolean }>}
  */
 export async function verifyRoleWithBackend() {
   try {
-    const { data, error } = await supabase.rpc('get_current_user_role')
-    if (error) {
-      console.warn('[EcoSentry RBAC] Role RPC verification error:', error.message)
+    // 1. Query real-time verified user token from Supabase Auth server
+    const { data: { user: serverUser }, error: userError } = await supabase.auth.getUser()
+    if (userError || !serverUser) {
       return { role: ROLES.GUEST, isRanger: false }
     }
-    const verifiedRole = String(data || '').toUpperCase().trim()
-    const isRanger = verifiedRole === ROLES.RANGER
-    return {
-      role: isRanger ? ROLES.RANGER : ROLES.GUEST,
-      isRanger
+
+    const userId = serverUser.id
+
+    // 2. Query secure PostgreSQL RPC get_current_user_role if available
+    try {
+      const { data: rpcRole, error: rpcError } = await supabase.rpc('get_current_user_role')
+      if (!rpcError && rpcRole) {
+        const normalized = String(rpcRole).toUpperCase().trim()
+        if (normalized === ROLES.RANGER) {
+          return { role: ROLES.RANGER, isRanger: true }
+        }
+      }
+    } catch {}
+
+    // 3. Query public.profiles database table if available
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle()
+      if (!profileError && profile?.role) {
+        const normalized = String(profile.role).toUpperCase().trim()
+        if (normalized === ROLES.RANGER) {
+          return { role: ROLES.RANGER, isRanger: true }
+        }
+      }
+    } catch {}
+
+    // 4. Check server-verified app_metadata and user_metadata
+    const appRole = serverUser.app_metadata?.role && String(serverUser.app_metadata.role).toUpperCase().trim()
+    const userRole = serverUser.user_metadata?.role && String(serverUser.user_metadata.role).toUpperCase().trim()
+
+    if (appRole === ROLES.RANGER || userRole === ROLES.RANGER) {
+      return { role: ROLES.RANGER, isRanger: true }
     }
+
+    // Fail-closed default: User authenticated successfully but lacks administrative role
+    console.warn('[EcoSentry RBAC] User authenticated but lacks Ranger administrative role in database.')
+    return { role: ROLES.GUEST, isRanger: false }
   } catch (err) {
     console.warn('[EcoSentry RBAC] Role verification failed:', err)
     return { role: ROLES.GUEST, isRanger: false }

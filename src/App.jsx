@@ -58,26 +58,65 @@ import {
 import './App.css'
 
 export default function App() {
-  // Pure unauthenticated initial state - never automatically authenticate on application load
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [session, setSession] = useState(() => {
+    try {
+      if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+        return createGuestSession()
+      }
+    } catch {}
+    return null
+  })
+  const [loading, setLoading] = useState(true)
   const [isEnteringDashboard, setIsEnteringDashboard] = useState(false)
 
   useEffect(() => {
-    // Security Requirement: Do not automatically authenticate the Ranger when the application loads.
-    // Require the user/admin to manually enter their credentials.
+    // 1. Check if Guest session was active
     try {
-      localStorage.removeItem('ecosentry_guest_session')
+      if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+        setSession(createGuestSession())
+        setLoading(false)
+        return
+      }
     } catch {}
-    supabase.auth.signOut().catch(() => {})
-    setSession(null)
-    setLoading(false)
 
-    // Listen to auth state changes (e.g. sign out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === 'SIGNED_OUT' || !newSession) {
+    // 2. Check for active Supabase session to preserve session on page reload
+    supabase.auth.getSession().catch(() => ({ data: { session: null } })).then(async ({ data: { session: fetchedSession } = {} }) => {
+      try {
+        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+          setSession(createGuestSession())
+          setLoading(false)
+          return
+        }
+      } catch {}
+
+      if (fetchedSession?.user) {
+        // Verify with Supabase Auth server that the session token remains valid
+        const { data: { user: verifiedUser }, error } = await supabase.auth.getUser().catch(() => ({ data: { user: null }, error: true }))
+        if (verifiedUser && !error) {
+          setSession(fetchedSession)
+        } else {
+          setSession(null)
+        }
+      } else {
         setSession(null)
       }
+      setLoading(false)
+    })
+
+    // 3. Listen to auth state transitions dynamically
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      try {
+        if (localStorage.getItem('ecosentry_guest_session') === 'true') {
+          return
+        }
+      } catch {}
+
+      if (event === 'SIGNED_OUT' || !newSession) {
+        setSession(null)
+      } else if (newSession) {
+        setSession(newSession)
+      }
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
